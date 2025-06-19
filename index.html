@@ -1,0 +1,1519 @@
+import React, { useState, useEffect, useRef } from "react";
+
+const MolecularInteractionSandbox = () => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState("simple");
+
+  // State variables
+  const [running, setRunning] = useState(true); // Start in running state
+  const [showCharges, setShowCharges] = useState(false);
+  const [potentialEnergy, setPotentialEnergy] = useState(0);
+  const [molecules, setMolecules] = useState([]);
+  const [selectedMoleculeType, setSelectedMoleculeType] = useState("molecule1");
+  const [shakeRecoveryTime, setShakeRecoveryTime] = useState(0);
+  const [shakeIntensity, setShakeIntensity] = useState(0);
+  const [moleculeJustAdded, setMoleculeJustAdded] = useState(false);
+  const [moleculeAddedTime, setMoleculeAddedTime] = useState(0);
+  const [energyRising, setEnergyRising] = useState(false);
+  const [energyRiseProgress, setEnergyRiseProgress] = useState(0);
+  const [addedTypes, setAddedTypes] = useState({
+    polar: false,
+    nonpolar: false,
+    amphipathic: false,
+  });
+  const [slowMotion, setSlowMotion] = useState(false);
+  const [mixingTime, setMixingTime] = useState(0);
+  const [bulkAddCount, setBulkAddCount] = useState(0); // Track bulk additions
+  const [crowdedSettlingTime, setCrowdedSettlingTime] = useState(0); // Extended settling for many molecules
+  const [isSecondBulkAdd, setIsSecondBulkAdd] = useState(false); // Track if this is the second bulk addition
+
+  const SLOW_MOTION_FACTOR = 0.25;
+  const UPRIGHT_ORIENTATION = 0;
+  const MAX_WOBBLE = Math.PI / 18;
+  const MIXING_DURATION = 120;
+
+  // Constants
+  const CANVAS_WIDTH = 800;
+  const CANVAS_HEIGHT = 600;
+  const WATER_HEIGHT = CANVAS_HEIGHT / 2;
+  const OIL_HEIGHT = CANVAS_HEIGHT / 2;
+  const STABLE_ENERGY = 10;
+  const MOLECULE_ADDED_ENERGY_BOOST = 20;
+  const MOLECULE_ADDED_RECOVERY_TIME = 90;
+  const FIXED_SPEED = 1.7;
+
+  // Molecule types mapping
+  const moleculeTypeMapping = {
+    molecule1: "polar", // Water
+    molecule2: "polar",
+    molecule3: "nonpolar", // Oil
+    molecule4: "nonpolar",
+    molecule5: "amphipathic",
+    molecule6: "amphipathic",
+    random: "random",
+  };
+
+  // Canvas refs
+  const canvasRef = useRef(null);
+  const frameRef = useRef(null);
+
+  // Reset when switching tabs but preserve running state
+  useEffect(() => {
+    setMolecules([]);
+    setPotentialEnergy(0);
+    setShakeRecoveryTime(0);
+    setShakeIntensity(0);
+    setMoleculeJustAdded(false);
+    setMoleculeAddedTime(0);
+    setEnergyRising(false);
+    setEnergyRiseProgress(0);
+    setMixingTime(0);
+    setBulkAddCount(0); // Reset bulk add count when switching tabs
+    setCrowdedSettlingTime(0); // Reset crowded settling time
+    setIsSecondBulkAdd(false); // Reset second bulk add flag
+    // Don't change running state when switching tabs
+  }, [activeTab]);
+
+  // Initialize molecules
+  useEffect(() => {
+    resetSimulation();
+  }, []);
+
+  // Animation loop
+  useEffect(() => {
+    if (!running) return;
+
+    const render = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext("2d");
+      updateMolecules(slowMotion ? SLOW_MOTION_FACTOR : 1.0);
+      drawScene(ctx);
+      calculatePotentialEnergy();
+
+      frameRef.current = requestAnimationFrame(render);
+    };
+
+    frameRef.current = requestAnimationFrame(render);
+
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, [
+    running,
+    molecules,
+    showCharges,
+    shakeRecoveryTime,
+    shakeIntensity,
+    potentialEnergy,
+    slowMotion,
+    moleculeJustAdded,
+    moleculeAddedTime,
+    energyRising,
+    energyRiseProgress,
+    mixingTime,
+    crowdedSettlingTime,
+    isSecondBulkAdd,
+  ]);
+
+  // Force initial redraw
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      drawScene(ctx);
+    }
+  }, []);
+
+  // Enhanced shake function with smooth energy rise
+  const shakeMolecules = () => {
+    if (!running) {
+      setRunning(true);
+    }
+
+    setMixingTime(MIXING_DURATION);
+    setShakeRecoveryTime(400);
+    setShakeIntensity(2.0);
+    setEnergyRising(true);
+    setEnergyRiseProgress(0);
+
+    setMolecules((prevMolecules) => {
+      return prevMolecules.map((molecule) => {
+        const randomVx = (Math.random() - 0.5) * 80;
+        const randomVy = (Math.random() - 0.5) * 80;
+        const teleportChance = molecule.type === "amphipathic" ? 0.5 : 0.3;
+
+        let randomOrientation = undefined;
+        if (molecule.type === "amphipathic") {
+          randomOrientation = Math.random() * Math.PI * 2;
+        }
+
+        if (Math.random() < teleportChance) {
+          return {
+            ...molecule,
+            x: Math.random() * CANVAS_WIDTH,
+            y: Math.random() * CANVAS_HEIGHT,
+            vx: randomVx,
+            vy: randomVy,
+            speedMultiplier: 2.3,
+            ...(randomOrientation !== undefined && {
+              orientation: randomOrientation,
+            }),
+          };
+        }
+
+        return {
+          ...molecule,
+          vx: randomVx,
+          vy: randomVy,
+          speedMultiplier: 2.3,
+          ...(randomOrientation !== undefined && {
+            orientation: randomOrientation,
+          }),
+        };
+      });
+    });
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      drawScene(ctx);
+    }
+  };
+
+  // Create a molecule with a specific color variant
+  const createMoleculeWithVariant = (type, variantIndex) => {
+    // During mixing period in simple mode, spawn randomly across entire canvas
+    let x, y, angle;
+
+    if (activeTab === "simple" && mixingTime > 0) {
+      // Random position anywhere on canvas during mixing
+      x = Math.random() * CANVAS_WIDTH;
+      y = Math.random() * CANVAS_HEIGHT;
+      angle = Math.random() * Math.PI * 2; // Random direction
+    } else {
+      // Normal spawn from top
+      x = Math.random() * CANVAS_WIDTH;
+      y = 20 + Math.random() * 30;
+      angle = Math.PI / 2 + (Math.random() - 0.5) * 0.8;
+    }
+    const speed = FIXED_SPEED;
+
+    const typeColors = {
+      polar: ["#3498db", "#CC6677"],
+      nonpolar: ["#E69F00", "#009E73"],
+      amphipathic: ["#9b59b6", "#DA70D6"],
+    };
+
+    const colorIndex = variantIndex;
+    const stableColor = typeColors[type][colorIndex];
+
+    const baseProperties = {
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      radius: activeTab === "simple" ? 20 : 15, // Bigger molecules in simple mode
+      color: stableColor,
+      colorVariant: colorIndex,
+    };
+
+    switch (type) {
+      case "polar":
+        return {
+          ...baseProperties,
+          type: "polar",
+          preferredRegion: "water",
+          partialCharge: {
+            positive: { x: 0, y: -7 },
+            negative: { x: 0, y: 7 },
+          },
+          orientation: Math.random() * Math.PI * 2,
+          rotationVelocity: 0,
+          rotationDamping: 0.98,
+        };
+      case "nonpolar":
+        return {
+          ...baseProperties,
+          type: "nonpolar",
+          preferredRegion: "oil",
+          partialCharge: null,
+        };
+      case "amphipathic":
+        return {
+          ...baseProperties,
+          type: "amphipathic",
+          preferredRegion: "interface",
+          partialCharge: {
+            positive: { x: 0, y: -7 },
+            negative: { x: 0, y: 0 },
+          },
+          orientation: UPRIGHT_ORIENTATION,
+          rotationDirection: Math.random() > 0.5 ? 1 : -1,
+          rotationRate: Math.random() * 0.02 + 0.01,
+          wobbleFrequency: 0.01 + Math.random() * 0.02,
+          wobblePhase: Math.random() * Math.PI * 2,
+          wobbleTimer: 0,
+        };
+      default:
+        return baseProperties;
+    }
+  };
+
+  // Add bulk molecules function (for "Add a bunch" button)
+  const addBulkMolecules = () => {
+    // Check if we've already added bulk molecules twice
+    if (bulkAddCount >= 2) {
+      return; // Silently do nothing if limit reached
+    }
+
+    const isSecondAdd = bulkAddCount === 1;
+
+    const newMolecules = [];
+    const numMolecules = 75;
+
+    for (let i = 0; i < numMolecules; i++) {
+      const simpleTypes = ["molecule1", "molecule3"]; // Water and Oil only
+      const randomTypeKey =
+        simpleTypes[Math.floor(Math.random() * simpleTypes.length)];
+      const randomVariant = 0; // Always use variant 0 for consistent colors in simple mode
+      const actualType = moleculeTypeMapping[randomTypeKey];
+      const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+      newMolecules.push(newMolecule);
+    }
+
+    setMolecules((prev) => {
+      const updatedMolecules = [...prev, ...newMolecules];
+      const totalMolecules = updatedMolecules.length;
+
+      if (isSecondAdd) {
+        // Much longer settling for second bulk addition
+        setCrowdedSettlingTime(1200 + (totalMolecules - 50) * 8); // Base 20 seconds + extra time
+        setIsSecondBulkAdd(true);
+      } else if (totalMolecules >= 50) {
+        // Normal extended settling for first bulk addition
+        setCrowdedSettlingTime(600 + (totalMolecules - 50) * 4); // Base 10 seconds + extra time
+        setIsSecondBulkAdd(false);
+      }
+
+      return updatedMolecules;
+    });
+    setBulkAddCount((prev) => prev + 1); // Increment bulk add count
+
+    // Trigger energy rise animation like shaking for bulk addition
+    setEnergyRising(true);
+    setEnergyRiseProgress(0);
+
+    // Also set shake recovery to create the energy spike effect
+    setShakeRecoveryTime(400);
+    setShakeIntensity(2.0);
+
+    // Start mixing timer when first molecule is added
+    if (molecules.length === 0) {
+      setMixingTime(120);
+    }
+
+    setMoleculeJustAdded(true);
+    setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
+
+    if (!running) {
+      setRunning(true);
+    }
+  };
+
+  // Add random molecule function (for single molecule)
+  const addRandomMolecule = () => {
+    if (activeTab === "simple") {
+      // Simple tab - add single random water or oil molecule
+      const simpleTypes = ["molecule1", "molecule3"]; // Water and Oil only
+      const randomTypeKey =
+        simpleTypes[Math.floor(Math.random() * simpleTypes.length)];
+      const randomVariant = 0; // Always use variant 0 for consistent colors in simple mode
+      const actualType = moleculeTypeMapping[randomTypeKey];
+      const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+      setMolecules((prev) => [...prev, newMolecule]);
+    } else {
+      // Advanced tab - full functionality
+      const allTypesAdded =
+        addedTypes.polar && addedTypes.nonpolar && addedTypes.amphipathic;
+      let availableTypes = [];
+
+      if (!allTypesAdded) {
+        if (!addedTypes.polar) availableTypes.push("molecule1", "molecule2");
+        if (!addedTypes.nonpolar) availableTypes.push("molecule3", "molecule4");
+        if (!addedTypes.amphipathic)
+          availableTypes.push("molecule5", "molecule6");
+      }
+
+      if (allTypesAdded || availableTypes.length === 0) {
+        availableTypes = Object.keys(moleculeTypeMapping).filter(
+          (type) => type !== "random"
+        );
+      }
+
+      const randomTypeKey =
+        availableTypes[Math.floor(Math.random() * availableTypes.length)];
+      const randomVariant = Math.floor(Math.random() * 2);
+      const actualType = moleculeTypeMapping[randomTypeKey];
+      const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+
+      setAddedTypes((prev) => ({
+        ...prev,
+        [actualType]: true,
+      }));
+
+      setMolecules((prev) => [...prev, newMolecule]);
+    }
+
+    // Start mixing timer when first molecule is added
+    if (molecules.length === 0) {
+      setMixingTime(activeTab === "simple" ? 120 : MIXING_DURATION);
+    }
+
+    setMoleculeJustAdded(true);
+    setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
+
+    if (!running) {
+      setRunning(true);
+    }
+  };
+
+  // Add 5 random molecules function (for advanced tab)
+  const add5RandomMolecules = () => {
+    const allTypesAdded =
+      addedTypes.polar && addedTypes.nonpolar && addedTypes.amphipathic;
+
+    for (let i = 0; i < 5; i++) {
+      let availableTypes = [];
+
+      if (!allTypesAdded) {
+        if (!addedTypes.polar) availableTypes.push("molecule1", "molecule2");
+        if (!addedTypes.nonpolar) availableTypes.push("molecule3", "molecule4");
+        if (!addedTypes.amphipathic)
+          availableTypes.push("molecule5", "molecule6");
+      }
+
+      if (allTypesAdded || availableTypes.length === 0) {
+        availableTypes = Object.keys(moleculeTypeMapping).filter(
+          (type) => type !== "random"
+        );
+      }
+
+      const randomTypeKey =
+        availableTypes[Math.floor(Math.random() * availableTypes.length)];
+      const randomVariant = Math.floor(Math.random() * 2);
+      const actualType = moleculeTypeMapping[randomTypeKey];
+      const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+
+      setAddedTypes((prev) => ({
+        ...prev,
+        [actualType]: true,
+      }));
+
+      setMolecules((prev) => [...prev, newMolecule]);
+    }
+
+    // Start mixing timer when first molecule is added
+    if (molecules.length === 0) {
+      setMixingTime(MIXING_DURATION);
+    }
+
+    setMoleculeJustAdded(true);
+    setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
+
+    if (!running) {
+      setRunning(true);
+    }
+  };
+
+  // Add specific molecule
+  const addMolecule = () => {
+    if (selectedMoleculeType === "random") {
+      addRandomMolecule();
+      return;
+    }
+
+    const actualType = moleculeTypeMapping[selectedMoleculeType];
+    const colorVariant =
+      selectedMoleculeType.endsWith("1") ||
+      selectedMoleculeType.endsWith("3") ||
+      selectedMoleculeType.endsWith("5")
+        ? 0
+        : 1;
+
+    const newMolecule = createMoleculeWithVariant(actualType, colorVariant);
+    setMolecules((prev) => [...prev, newMolecule]);
+
+    if (molecules.length === 0) {
+      setMixingTime(MIXING_DURATION);
+    }
+
+    setMoleculeJustAdded(true);
+    setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
+
+    if (!running) {
+      setRunning(true);
+    }
+  };
+
+  // Reset the simulation
+  const resetSimulation = () => {
+    setMolecules([]);
+    setPotentialEnergy(0);
+    setRunning(false); // Pause when explicitly resetting
+    setShakeRecoveryTime(0);
+    setShakeIntensity(0);
+    setMoleculeJustAdded(false);
+    setMoleculeAddedTime(0);
+    setEnergyRising(false);
+    setEnergyRiseProgress(0);
+    setMixingTime(0);
+    setBulkAddCount(0); // Reset bulk add count
+    setCrowdedSettlingTime(0); // Reset crowded settling time
+    setIsSecondBulkAdd(false); // Reset second bulk add flag
+
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+    }
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      drawScene(ctx);
+    }
+  };
+
+  // Helper function for smooth easing
+  const easeOutCubic = (x) => {
+    return 1 - Math.pow(1 - x, 3);
+  };
+
+  // Update molecules
+  const updateMolecules = (speedFactor = 1.0) => {
+    if (mixingTime > 0) {
+      setMixingTime((prevTime) => Math.max(0, prevTime - speedFactor));
+    }
+
+    if (crowdedSettlingTime > 0) {
+      setCrowdedSettlingTime((prevTime) => Math.max(0, prevTime - speedFactor));
+    }
+
+    if (shakeRecoveryTime > 0) {
+      setShakeRecoveryTime((prevTime) => {
+        return Math.max(0, prevTime - speedFactor);
+      });
+
+      const normalizedTime = shakeRecoveryTime / 360;
+      setShakeIntensity(easeOutCubic(normalizedTime));
+    }
+
+    setMolecules((prevMolecules) => {
+      return prevMolecules.map((molecule) => {
+        let {
+          x,
+          y,
+          vx,
+          vy,
+          type,
+          preferredRegion,
+          speedMultiplier = 1.0,
+        } = molecule;
+
+        const effectiveSpeed =
+          FIXED_SPEED * (1.0 + (speedMultiplier - 1.0) * shakeIntensity);
+        const shouldApplyForces = mixingTime <= 0;
+        const forceStrength =
+          shakeRecoveryTime > 0
+            ? 0.05 + 0.95 * (1 - shakeIntensity * 0.8)
+            : 1.0;
+
+        if (shouldApplyForces) {
+          if (preferredRegion === "water") {
+            if (y < WATER_HEIGHT) {
+              vy += 0.8 * forceStrength * speedFactor;
+            }
+          } else if (preferredRegion === "oil") {
+            if (y > WATER_HEIGHT) {
+              vy -= 0.8 * forceStrength * speedFactor;
+            }
+          } else if (preferredRegion === "interface") {
+            if (shakeRecoveryTime < 240) {
+              const distFromInterface = y - WATER_HEIGHT;
+              const amphipathicForceMultiplier =
+                shakeRecoveryTime > 0 ? forceStrength * 0.7 : forceStrength;
+              vy -=
+                distFromInterface *
+                0.15 *
+                amphipathicForceMultiplier *
+                speedFactor;
+            }
+
+            if (
+              molecule.orientation !== undefined &&
+              molecule.type === "amphipathic"
+            ) {
+              if (shakeRecoveryTime === 0) {
+                molecule.wobbleTimer =
+                  (molecule.wobbleTimer || 0) + speedFactor;
+                const wobbleAmount =
+                  Math.sin(
+                    molecule.wobbleTimer * molecule.wobbleFrequency +
+                      molecule.wobblePhase
+                  ) * MAX_WOBBLE;
+                molecule.orientation = UPRIGHT_ORIENTATION + wobbleAmount;
+              } else if (shakeRecoveryTime < 180) {
+                const currentOrientation = molecule.orientation;
+                molecule.wobbleTimer =
+                  (molecule.wobbleTimer || 0) + speedFactor;
+                const targetWobble =
+                  Math.sin(
+                    molecule.wobbleTimer * molecule.wobbleFrequency +
+                      molecule.wobblePhase
+                  ) * MAX_WOBBLE;
+                const targetOrientation = UPRIGHT_ORIENTATION + targetWobble;
+
+                let delta = targetOrientation - currentOrientation;
+                if (delta > Math.PI) delta -= Math.PI * 2;
+                if (delta < -Math.PI) delta += Math.PI * 2;
+
+                molecule.orientation =
+                  currentOrientation + delta * 0.05 * speedFactor;
+              }
+            }
+          }
+        }
+
+        if (shakeRecoveryTime > 0) {
+          const randomFactor = shakeIntensity * 0.4 * speedFactor;
+          vx += (Math.random() - 0.5) * randomFactor;
+          vy += (Math.random() - 0.5) * randomFactor;
+        }
+
+        const speed = effectiveSpeed;
+        const currentSpeed = Math.sqrt(vx * vx + vy * vy);
+        const scaleFactor = speed / Math.max(0.1, currentSpeed);
+        vx *= scaleFactor;
+        vy *= scaleFactor;
+
+        x += vx * speedFactor;
+        y += vy * speedFactor;
+
+        // Boundary checking
+        if (x < molecule.radius) {
+          x = molecule.radius;
+          vx = -vx;
+          if (molecule.type === "polar") {
+            const rotationReduction =
+              activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+            molecule.rotationVelocity =
+              Math.max(
+                -0.3,
+                Math.min(
+                  0.3,
+                  molecule.rotationVelocity +
+                    (Math.random() * 0.3 - 0.15) * rotationReduction
+                )
+              ) * speedFactor;
+          }
+        } else if (x > CANVAS_WIDTH - molecule.radius) {
+          x = CANVAS_WIDTH - molecule.radius;
+          vx = -vx;
+          if (molecule.type === "polar") {
+            const rotationReduction =
+              activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+            molecule.rotationVelocity =
+              Math.max(
+                -0.3,
+                Math.min(
+                  0.3,
+                  molecule.rotationVelocity +
+                    (Math.random() * 0.3 - 0.15) * rotationReduction
+                )
+              ) * speedFactor;
+          }
+        }
+
+        if (y < molecule.radius) {
+          y = molecule.radius;
+          vy = -vy;
+          if (molecule.type === "polar") {
+            const rotationReduction =
+              activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+            molecule.rotationVelocity =
+              Math.max(
+                -0.3,
+                Math.min(
+                  0.3,
+                  molecule.rotationVelocity +
+                    (Math.random() * 0.3 - 0.15) * rotationReduction
+                )
+              ) * speedFactor;
+          }
+        } else if (y > CANVAS_HEIGHT - molecule.radius) {
+          y = CANVAS_HEIGHT - molecule.radius;
+          vy = -vy;
+          if (molecule.type === "polar") {
+            const rotationReduction =
+              activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+            molecule.rotationVelocity =
+              Math.max(
+                -0.3,
+                Math.min(
+                  0.3,
+                  molecule.rotationVelocity +
+                    (Math.random() * 0.3 - 0.15) * rotationReduction
+                )
+              ) * speedFactor;
+          }
+        }
+
+        if (
+          molecule.type === "polar" &&
+          molecule.rotationVelocity !== undefined
+        ) {
+          molecule.orientation =
+            (molecule.orientation + molecule.rotationVelocity * speedFactor) %
+            (Math.PI * 2);
+          if (molecule.orientation < 0) molecule.orientation += Math.PI * 2;
+
+          // Increase damping when in advanced tab or there are many molecules to reduce crazy spinning
+          const dampingFactor =
+            activeTab === "advanced" || molecules.length > 50
+              ? 0.88
+              : molecule.rotationDamping;
+          molecule.rotationVelocity *= dampingFactor;
+        }
+
+        // Handle collisions with other molecules
+        prevMolecules.forEach((otherMolecule) => {
+          if (molecule === otherMolecule) return;
+
+          const dx = otherMolecule.x - x;
+          const dy = otherMolecule.y - y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < molecule.radius + otherMolecule.radius) {
+            const nx = dx / distance;
+            const ny = dy / distance;
+
+            vx -= nx * 0.2 * speedFactor;
+            vy -= ny * 0.2 * speedFactor;
+
+            const overlap = molecule.radius + otherMolecule.radius - distance;
+            x -= nx * overlap * 0.5;
+            y -= ny * overlap * 0.5;
+
+            if (molecule.type === "polar") {
+              const rotationReduction = molecules.length > 50 ? 0.2 : 1.0; // Greatly reduce rotation when crowded
+              molecule.rotationVelocity +=
+                (Math.random() * 0.2 - 0.1) * speedFactor * rotationReduction;
+            }
+          }
+        });
+
+        const postCollisionSpeed = Math.sqrt(vx * vx + vy * vy);
+        vx = (vx / postCollisionSpeed) * speed;
+        vy = (vy / postCollisionSpeed) * speed;
+
+        return { ...molecule, x, y, vx, vy, speedMultiplier };
+      });
+    });
+  };
+
+  // Calculate potential energy
+  const calculatePotentialEnergy = () => {
+    if (molecules.length === 0) {
+      setPotentialEnergy(0);
+      return;
+    }
+
+    if (energyRising) {
+      setEnergyRiseProgress((prev) => {
+        const newProgress = Math.min(1.0, prev + 0.05);
+        if (newProgress >= 1.0) {
+          setEnergyRising(false);
+        }
+        return newProgress;
+      });
+
+      const easedProgress = Math.pow(energyRiseProgress, 2);
+      const startEnergy = STABLE_ENERGY;
+      const animatedEnergy = startEnergy + (100 - startEnergy) * easedProgress;
+      setPotentialEnergy(animatedEnergy);
+    } else if (shakeRecoveryTime > 0) {
+      const recoveryProgress = 1 - shakeRecoveryTime / 360;
+      const easeInQuad = recoveryProgress * recoveryProgress;
+      const currentEnergy = 100 - (100 - STABLE_ENERGY) * easeInQuad;
+
+      let positionVariation = 0;
+      molecules.forEach((molecule) => {
+        if (molecule.preferredRegion === "water") {
+          positionVariation += Math.max(0, molecule.y - WATER_HEIGHT) * 0.05;
+        } else if (molecule.preferredRegion === "oil") {
+          positionVariation += Math.max(0, WATER_HEIGHT - molecule.y) * 0.05;
+        } else if (molecule.preferredRegion === "interface") {
+          positionVariation += Math.abs(molecule.y - WATER_HEIGHT) * 0.03;
+        }
+      });
+
+      const scaledVariation = Math.min(
+        5,
+        positionVariation / Math.max(1, molecules.length)
+      );
+      setPotentialEnergy(
+        Math.min(100, Math.max(STABLE_ENERGY, currentEnergy + scaledVariation))
+      );
+    } else if (crowdedSettlingTime > 0) {
+      // Extended settling period for many molecules - slower decay
+      const totalSettlingTime = isSecondBulkAdd
+        ? 1200 + (molecules.length - 50) * 8 // Much longer for second addition
+        : 600 + (molecules.length - 50) * 4; // Normal extended for first addition
+
+      const recoveryProgress = 1 - crowdedSettlingTime / totalSettlingTime;
+      const slowEase = isSecondBulkAdd
+        ? Math.pow(recoveryProgress, 0.5) // Even slower decay for second addition
+        : Math.pow(recoveryProgress, 0.7); // Slower than normal recovery
+
+      const startingEnergy = isSecondBulkAdd ? 90 : 80; // Higher starting energy for second addition
+      const currentEnergy =
+        startingEnergy - (startingEnergy - STABLE_ENERGY) * slowEase;
+
+      // Add more variation based on molecule interactions
+      let positionVariation = 0;
+      let moleculeInteractions = 0;
+
+      molecules.forEach((molecule) => {
+        if (molecule.preferredRegion === "water") {
+          positionVariation +=
+            Math.max(0, molecule.y - WATER_HEIGHT) *
+            (isSecondBulkAdd ? 0.12 : 0.08);
+        } else if (molecule.preferredRegion === "oil") {
+          positionVariation +=
+            Math.max(0, WATER_HEIGHT - molecule.y) *
+            (isSecondBulkAdd ? 0.12 : 0.08);
+        } else if (molecule.preferredRegion === "interface") {
+          positionVariation +=
+            Math.abs(molecule.y - WATER_HEIGHT) *
+            (isSecondBulkAdd ? 0.1 : 0.06);
+        }
+
+        // Count nearby molecules for interaction energy
+        molecules.forEach((otherMolecule) => {
+          if (molecule !== otherMolecule) {
+            const dx = molecule.x - otherMolecule.x;
+            const dy = molecule.y - otherMolecule.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 50) {
+              // Close proximity
+              moleculeInteractions += isSecondBulkAdd ? 0.5 : 0.3; // More interaction energy for second addition
+            }
+          }
+        });
+      });
+
+      const scaledVariation = Math.min(
+        isSecondBulkAdd ? 20 : 15,
+        positionVariation / Math.max(1, molecules.length)
+      );
+      const interactionEnergy = Math.min(
+        isSecondBulkAdd ? 15 : 10,
+        (moleculeInteractions / (molecules.length * molecules.length)) * 100
+      );
+      const oscillation =
+        Math.sin(Date.now() / (isSecondBulkAdd ? 250 : 200)) *
+        (isSecondBulkAdd ? 3 : 2); // Slower, larger oscillation for second addition
+
+      setPotentialEnergy(
+        Math.min(
+          100,
+          Math.max(
+            STABLE_ENERGY,
+            currentEnergy + scaledVariation + interactionEnergy + oscillation
+          )
+        )
+      );
+    } else if (moleculeJustAdded) {
+      setMoleculeAddedTime((prevTime) => {
+        const newTime = Math.max(0, prevTime - 1);
+        if (newTime === 0) {
+          setMoleculeJustAdded(false);
+        }
+        return newTime;
+      });
+
+      const boostFactor = moleculeAddedTime / MOLECULE_ADDED_RECOVERY_TIME;
+      const boostAmount = MOLECULE_ADDED_ENERGY_BOOST * boostFactor;
+      const oscillation = Math.sin(Date.now() / 100) * 2;
+      const baseEnergy = STABLE_ENERGY + oscillation;
+      setPotentialEnergy(Math.max(STABLE_ENERGY, baseEnergy + boostAmount));
+    } else {
+      let baseEnergy = STABLE_ENERGY;
+
+      if (mixingTime > 0) {
+        const mixingProgress = mixingTime / MIXING_DURATION;
+        baseEnergy += mixingProgress * 20;
+      }
+
+      const oscillation = Math.sin(Date.now() / 150) * 3;
+      let extraEnergy = 0;
+
+      molecules.forEach((molecule) => {
+        if (molecule.preferredRegion === "water") {
+          extraEnergy += Math.max(0, molecule.y - WATER_HEIGHT) * 0.3;
+        } else if (molecule.preferredRegion === "oil") {
+          extraEnergy += Math.max(0, WATER_HEIGHT - molecule.y) * 0.3;
+        } else if (molecule.preferredRegion === "interface") {
+          extraEnergy += Math.abs(molecule.y - WATER_HEIGHT) * 0.2;
+        }
+      });
+
+      const scaledExtraEnergy = Math.min(
+        10,
+        (extraEnergy / Math.max(1, molecules.length)) * 1.5
+      );
+      setPotentialEnergy(
+        Math.max(STABLE_ENERGY, baseEnergy + oscillation + scaledExtraEnergy)
+      );
+    }
+  };
+
+  // Draw scene
+  const drawScene = (ctx) => {
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.imageSmoothingEnabled = false;
+
+    // Draw background regions for advanced tab only
+    if (activeTab === "advanced") {
+      // Oil region (top half) - faint yellow
+      ctx.fillStyle = "rgba(255, 235, 59, 0.1)";
+      ctx.fillRect(0, 0, CANVAS_WIDTH, WATER_HEIGHT);
+
+      // Water region (bottom half) - faint blue
+      ctx.fillStyle = "rgba(33, 150, 243, 0.1)";
+      ctx.fillRect(0, WATER_HEIGHT, CANVAS_WIDTH, OIL_HEIGHT);
+
+      // Interface line
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(0, WATER_HEIGHT);
+      ctx.lineTo(CANVAS_WIDTH, WATER_HEIGHT);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Labels
+      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.font = "bold 16px 'Poppins', sans-serif";
+      ctx.textAlign = "center";
+
+      // Oil label
+      ctx.fillText("OIL", CANVAS_WIDTH / 2, 30);
+
+      // Water label
+      ctx.fillText("WATER", CANVAS_WIDTH / 2, WATER_HEIGHT + 30);
+    }
+
+    // Show indicators
+    if (slowMotion) {
+      const slowMotionText = "SLOW MOTION";
+      ctx.font = "bold 14px 'Poppins', sans-serif";
+      const textWidth = ctx.measureText(slowMotionText).width;
+      const padding = 5;
+
+      ctx.fillStyle = "rgba(255, 220, 0, 0.3)";
+      ctx.fillRect(150, 25, textWidth + padding * 2, 20);
+      ctx.strokeStyle = "rgba(255, 180, 0, 0.7)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(150, 25, textWidth + padding * 2, 20);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(slowMotionText, 150 + padding, 35);
+      ctx.textBaseline = "alphabetic";
+    }
+
+    // Draw molecules
+    molecules.forEach((molecule) => {
+      if (showCharges && molecule.type === "amphipathic") {
+        // Skip normal drawing for amphipathic when showing charges
+      } else if (!showCharges || molecule.type !== "amphipathic") {
+        ctx.beginPath();
+        ctx.arc(molecule.x, molecule.y, molecule.radius, 0, Math.PI * 2);
+        ctx.fillStyle = molecule.color;
+        ctx.fill();
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Show partial charges if enabled
+      if (showCharges) {
+        if (molecule.type === "polar") {
+          ctx.save();
+          ctx.translate(molecule.x, molecule.y);
+          ctx.rotate(molecule.orientation || 0);
+
+          ctx.beginPath();
+          ctx.arc(0, 0, molecule.radius, Math.PI * 0.5, Math.PI * 1.5, false);
+          ctx.lineTo(0, 0);
+          ctx.closePath();
+          ctx.fillStyle = "#FF4444";
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(0, 0, molecule.radius, -Math.PI * 0.5, Math.PI * 0.5, false);
+          ctx.lineTo(0, 0);
+          ctx.closePath();
+          ctx.fillStyle = "#4444FF";
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(0, -molecule.radius);
+          ctx.lineTo(0, molecule.radius);
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.restore();
+        } else if (molecule.type === "amphipathic") {
+          ctx.save();
+          ctx.translate(molecule.x, molecule.y);
+          ctx.rotate(molecule.orientation);
+
+          ctx.beginPath();
+          ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fill();
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-molecule.radius, 0);
+          ctx.lineTo(-molecule.radius, molecule.radius);
+          ctx.lineTo(0, molecule.radius);
+          ctx.closePath();
+          ctx.clip();
+          ctx.beginPath();
+          ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "#4444FF";
+          ctx.fill();
+          ctx.restore();
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(molecule.radius, 0);
+          ctx.lineTo(molecule.radius, molecule.radius);
+          ctx.lineTo(0, molecule.radius);
+          ctx.closePath();
+          ctx.clip();
+          ctx.beginPath();
+          ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "#FF4444";
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, molecule.radius);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(-molecule.radius, 0);
+          ctx.lineTo(molecule.radius, 0);
+          ctx.stroke();
+
+          ctx.restore();
+        } else if (molecule.type === "nonpolar") {
+          ctx.beginPath();
+          ctx.arc(molecule.x, molecule.y, molecule.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fill();
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    });
+
+    if (shakeRecoveryTime > 0) {
+      const secondsLeft = (shakeRecoveryTime / 60).toFixed(1);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+      ctx.font = "12px 'Poppins', sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(`Settling (${secondsLeft}s)`, CANVAS_WIDTH - 35, 24);
+    } else if (crowdedSettlingTime > 0) {
+      const secondsLeft = (crowdedSettlingTime / 60).toFixed(1);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+      ctx.font = "12px 'Poppins', sans-serif";
+      ctx.textAlign = "right";
+      const message = isSecondBulkAdd
+        ? `Equilibrating (${secondsLeft}s)`
+        : `Stabilizing (${secondsLeft}s)`;
+      ctx.fillText(message, CANVAS_WIDTH - 35, 24);
+    }
+
+    // Draw energy display
+    if (molecules.length > 0) {
+      ctx.fillStyle = "white";
+      ctx.fillRect(CANVAS_WIDTH - 150, 10, 140, 70);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(CANVAS_WIDTH - 150, 10, 140, 70);
+
+      ctx.fillStyle = "black";
+      ctx.font = "bold 14px 'Poppins', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Potential Energy", CANVAS_WIDTH - 80, 30);
+
+      ctx.fillStyle = "#e0e0e0";
+      ctx.strokeStyle = "#999999";
+      ctx.lineWidth = 1;
+      ctx.fillRect(CANVAS_WIDTH - 130, 40, 100, 20);
+      ctx.strokeRect(CANVAS_WIDTH - 130, 40, 100, 20);
+
+      const energyGradient = ctx.createLinearGradient(
+        CANVAS_WIDTH - 130,
+        40,
+        CANVAS_WIDTH - 130 + 100,
+        40
+      );
+      energyGradient.addColorStop(0, "limegreen");
+      energyGradient.addColorStop(0.5, "yellow");
+      energyGradient.addColorStop(1, "red");
+
+      ctx.fillStyle = energyGradient;
+      ctx.fillRect(CANVAS_WIDTH - 130, 40, potentialEnergy, 20);
+
+      if (potentialEnergy > 70) {
+        const pulseIntensity = 0.2 + 0.1 * Math.sin(Date.now() / 150);
+        ctx.globalAlpha = pulseIntensity;
+        ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+        ctx.fillRect(CANVAS_WIDTH - 130, 40, potentialEnergy, 20);
+        ctx.globalAlpha = 1.0;
+      }
+
+      ctx.fillStyle = "black";
+      ctx.font = "12px 'Poppins', sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("Low", CANVAS_WIDTH - 130, 70);
+      ctx.textAlign = "right";
+      ctx.fillText("High", CANVAS_WIDTH - 30, 70);
+    }
+  };
+
+  const toggleSlowMotion = () => {
+    setSlowMotion(!slowMotion);
+  };
+
+  // Get available molecule options based on active tab
+  const getMoleculeOptions = () => {
+    if (activeTab === "simple") {
+      return [
+        { value: "molecule1", label: "Water (Blue)" },
+        { value: "molecule3", label: "Oil (Orange)" },
+        { value: "random", label: "Random (Water or Oil)" },
+      ];
+    } else {
+      return [
+        { value: "molecule1", label: "Water (Blue)" },
+        { value: "molecule2", label: "Polar Red" },
+        { value: "molecule3", label: "Oil (Orange)" },
+        { value: "molecule4", label: "Nonpolar Green" },
+        { value: "molecule5", label: "Amphipathic Purple" },
+        { value: "molecule6", label: "Amphipathic Pink" },
+        { value: "random", label: "Random Molecule" },
+      ];
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "24px",
+        backgroundColor: "#ffffff",
+        borderRadius: "12px",
+        fontFamily: "'Montserrat', sans-serif",
+        minHeight: "100vh",
+      }}
+    >
+      {/* Tab Navigation - Much More Prominent */}
+      <div
+        style={{
+          display: "flex",
+          marginBottom: "32px",
+          backgroundColor: "#ffffff",
+          borderRadius: "12px",
+          padding: "8px",
+          boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+          border: "2px solid #e0e0e0",
+        }}
+      >
+        <button
+          onClick={() => setActiveTab("simple")}
+          style={{
+            padding: "16px 32px",
+            borderRadius: "8px",
+            fontWeight: "700",
+            fontSize: "18px",
+            transition: "all 0.3s ease",
+            border: "none",
+            cursor: "pointer",
+            backgroundColor: activeTab === "simple" ? "#000000" : "transparent",
+            color: activeTab === "simple" ? "white" : "#6b7280",
+            boxShadow:
+              activeTab === "simple" ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "none",
+            transform: activeTab === "simple" ? "translateY(-2px)" : "none",
+            marginRight: "4px",
+          }}
+          onMouseEnter={(e) => {
+            if (activeTab !== "simple") {
+              e.target.style.backgroundColor = "#f3f4f6";
+              e.target.style.color = "#000000";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== "simple") {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#6b7280";
+            }
+          }}
+        >
+          Simple: Oil & Water
+        </button>
+        <button
+          onClick={() => setActiveTab("advanced")}
+          style={{
+            padding: "16px 32px",
+            borderRadius: "8px",
+            fontWeight: "700",
+            fontSize: "18px",
+            transition: "all 0.3s ease",
+            border: "none",
+            cursor: "pointer",
+            backgroundColor:
+              activeTab === "advanced" ? "#000000" : "transparent",
+            color: activeTab === "advanced" ? "white" : "#6b7280",
+            boxShadow:
+              activeTab === "advanced"
+                ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+                : "none",
+            transform: activeTab === "advanced" ? "translateY(-2px)" : "none",
+            marginLeft: "4px",
+          }}
+          onMouseEnter={(e) => {
+            if (activeTab !== "advanced") {
+              e.target.style.backgroundColor = "#f3f4f6";
+              e.target.style.color = "#000000";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== "advanced") {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#6b7280";
+            }
+          }}
+        >
+          Advanced: More Molecules
+        </button>
+      </div>
+
+      {/* Add buttons - outside the white box */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: "24px",
+          marginBottom: "16px",
+          gap: "16px",
+        }}
+      >
+        {activeTab === "simple" ? (
+          <>
+            <button
+              onClick={addBulkMolecules}
+              style={{
+                padding: "12px 20px",
+                backgroundColor: "#2360A1",
+                color: "white",
+                borderRadius: "8px",
+                fontSize: "16px",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                border: "none",
+                cursor: "pointer",
+                width: "220px",
+              }}
+            >
+              Add a bunch of oil and water
+            </button>
+            <button
+              onClick={addRandomMolecule}
+              style={{
+                padding: "12px 20px",
+                backgroundColor: "#F2A128",
+                color: "white",
+                borderRadius: "8px",
+                fontSize: "16px",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                border: "none",
+                cursor: "pointer",
+                width: "180px",
+              }}
+            >
+              Add random molecule
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={addRandomMolecule}
+              style={{
+                padding: "12px 20px",
+                backgroundColor: "#2360A1",
+                color: "white",
+                borderRadius: "8px",
+                fontSize: "16px",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                border: "none",
+                cursor: "pointer",
+                width: "180px",
+              }}
+            >
+              Add Random Molecule
+            </button>
+            <button
+              onClick={add5RandomMolecules}
+              style={{
+                padding: "12px 20px",
+                backgroundColor: "#97AFAE",
+                color: "white",
+                borderRadius: "8px",
+                fontSize: "16px",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                border: "none",
+                cursor: "pointer",
+                width: "200px",
+              }}
+            >
+              Add 5 Random Molecules
+            </button>
+          </>
+        )}
+      </div>
+
+      <div style={{ position: "relative" }}>
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          style={{
+            border: "2px solid #d1d5db",
+            backgroundColor: "white",
+            borderRadius: "8px",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+          }}
+        />
+      </div>
+
+      {/* Control buttons */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          marginTop: "24px",
+          justifyContent: "center",
+          gap: "16px",
+        }}
+      >
+        <button
+          onClick={() => setRunning(!running)}
+          style={{
+            padding: "12px 20px",
+            backgroundColor: "#2360A1",
+            color: "white",
+            borderRadius: "8px",
+            fontSize: "16px",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            border: "none",
+            margin: "0 12px",
+            cursor: "pointer",
+          }}
+        >
+          {running ? "Pause" : "Start"}
+        </button>
+
+        <button
+          onClick={resetSimulation}
+          style={{
+            padding: "12px 20px",
+            backgroundColor: "#97AFAE",
+            color: "white",
+            borderRadius: "8px",
+            fontSize: "16px",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            border: "none",
+            margin: "0 12px",
+            cursor: "pointer",
+          }}
+        >
+          Reset
+        </button>
+
+        <button
+          onClick={shakeMolecules}
+          style={{
+            padding: "12px 20px",
+            backgroundColor: "#F2A128",
+            color: "white",
+            borderRadius: "8px",
+            fontSize: "16px",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            border: "none",
+            margin: "0 12px",
+            cursor: "pointer",
+          }}
+        >
+          Shake
+        </button>
+
+        <button
+          onClick={toggleSlowMotion}
+          style={{
+            padding: "12px 20px",
+            backgroundColor: slowMotion ? "#2360A1" : "#e2e8f0",
+            color: slowMotion ? "white" : "#1e293b",
+            borderRadius: "8px",
+            fontSize: "16px",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            border: "none",
+            margin: "0 12px",
+            cursor: "pointer",
+          }}
+        >
+          {slowMotion ? "Normal Speed" : "Watch in Slow Motion"}
+        </button>
+      </div>
+
+      <div
+        style={{
+          marginTop: "32px",
+          padding: "24px",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          border: "1px solid #d1d5db",
+          width: "100%",
+          maxWidth: "600px",
+        }}
+      >
+        {/* Molecule selection */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "16px",
+            gap: "20px",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "14px",
+                color: "#000000",
+                marginBottom: "8px",
+                fontWeight: "500",
+              }}
+            >
+              Molecule Type:
+            </label>
+            <select
+              value={selectedMoleculeType}
+              onChange={(e) => setSelectedMoleculeType(e.target.value)}
+              style={{
+                border: "1px solid #d1d5db",
+                borderRadius: "4px",
+                padding: "8px 12px",
+                fontSize: "14px",
+                width: "200px",
+              }}
+            >
+              {getMoleculeOptions().map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={addMolecule}
+            style={{
+              padding: "8px 20px",
+              backgroundColor: "#F2A128",
+              color: "white",
+              borderRadius: "8px",
+              fontSize: "16px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              border: "none",
+              cursor: "pointer",
+              marginTop: "28px",
+              height: "38px",
+            }}
+          >
+            Add Specific Molecule
+          </button>
+        </div>
+
+        {/* Show Partial Charges */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: "8px",
+          }}
+        >
+          <input
+            type="checkbox"
+            id="showCharges"
+            checked={showCharges}
+            onChange={() => setShowCharges(!showCharges)}
+            style={{ marginRight: "8px" }}
+          />
+          <label
+            htmlFor="showCharges"
+            style={{
+              fontSize: "14px",
+              color: "#000000",
+              fontWeight: "500",
+            }}
+          >
+            Show Partial Charges
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MolecularInteractionSandbox;
