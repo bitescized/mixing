@@ -1,2046 +1,1566 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Interaction Sandbox</title>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        background: white;
-        /* Alternative light blue option: background: #f8fafc; */
-        margin: 0;
-        padding: 20px;
-        min-height: 100vh;
-      }
-
-      .container {
-        max-width: 800px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-      }
-
-      .title {
-        text-align: center;
-        color: #2c3e50;
-        margin-bottom: 30px;
-        font-size: 2em;
-      }
-
-      .mode-tabs {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 30px;
-        gap: 10px;
-      }
-
-      .tab-btn {
-        padding: 12px 24px;
-        background: #ecf0f1;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: bold;
-        color: #7f8c8d;
-        transition: all 0.3s ease;
-      }
-
-      .tab-btn.active {
-        background: #2360A1;
-        color: white;
-      }
-
-      .tab-btn:hover {
-        background: #97AFAE;
-        color: white;
-      }
-
-      .tab-btn.active:hover {
-        background: #1a4d85;
-      }
-
-      .atom-selection {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 30px;
-        align-items: center;
-      }
-
-      .atom-selector {
-        text-align: center;
-      }
-
-      .atom-selector label {
-        display: block;
-        margin-bottom: 10px;
-        font-weight: bold;
-        color: #34495e;
-      }
-
-      .element-grid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
-        margin-bottom: 15px;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      .element-box {
-        width: 55px;
-        height: 55px;
-        border: 3px solid #bdc3c7;
-        border-radius: 8px;
-        background: #ecf0f1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-weight: bold;
-      }
-
-      .element-box:hover {
-        border-color: #F2A128;
-        background: #fdf4e5;
-        transform: translateY(-2px);
-      }
-
-      .element-box.selected {
-        border-color: #2360A1;
-        background: #2360A1;
-        color: white;
-      }
-
-      .element-symbol {
-        font-size: 16px;
-        font-weight: bold;
-      }
-
-      .element-name {
-        font-size: 7px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      .atom-selector-visual {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-
-      .atom-selector-visual label {
-        display: block;
-        margin-bottom: 15px;
-        font-weight: bold;
-        color: #34495e;
-        font-size: 16px;
-      }
-
-      select {
-        padding: 10px;
-        font-size: 16px;
-        border: 2px solid #2360A1;
-        border-radius: 5px;
-        background: white;
-        color: #2c3e50;
-      }
-
-      .custom-controls {
-        display: none;
-        flex-direction: column;
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-
-      .slider-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-      }
-
-      .slider-group {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .slider-label {
-        font-weight: bold;
-        color: #2c3e50;
-        font-size: 18px;
-      }
-
-      .en-slider {
-        width: 200px;
-        height: 8px;
-        border-radius: 5px;
-        background: #ddd;
-        outline: none;
-        -webkit-appearance: none;
-      }
-
-      .en-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #2360A1;
-        cursor: pointer;
-      }
-
-      .en-slider::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #2360A1;
-        cursor: pointer;
-        border: none;
-      }
-
-      .en-value {
-        font-size: 16px;
-        font-weight: bold;
-        color: #2c3e50;
-        min-width: 40px;
-        text-align: center;
-      }
-
-      .bond-container {
-        position: relative;
-        height: 300px;
-        margin: 40px 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .electron-cloud {
-        position: absolute;
-        width: 450px;
-        height: 200px;
-        border-radius: 50%;
-        opacity: 0.6;
-        transition: all 0.5s ease;
-        z-index: 5;
-      }
-
-      /* New ionic cloud styles */
-      .ionic-cloud-left {
-        position: absolute;
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        opacity: 0.8;
-        transition: all 0.5s ease;
-        z-index: 5;
-        left: 50%;
-        transform: translateX(-185px);
-        display: none;
-      }
-
-      .ionic-cloud-right {
-        position: absolute;
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        opacity: 0.8;
-        transition: all 0.5s ease;
-        z-index: 5;
-        left: 50%;
-        transform: translateX(65px);
-        display: none;
-      }
-
-      .atom {
-        position: absolute;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 2px solid #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 14px;
-        color: white;
-        background: #2c3e50;
-        z-index: 15;
-      }
-
-      .atom1 {
-        left: 50%;
-        transform: translateX(-125px);
-      }
-
-      .atom2 {
-        left: 50%;
-        transform: translateX(85px);
-      }
-
-      .bond-line {
-        display: none;
-      }
-
-      .charge-symbol {
-        position: absolute;
-        font-weight: bold;
-        color: #2c3e50;
-        transition: all 0.5s ease;
-        z-index: 15;
-      }
-
-      .charge-left {
-        left: 80px;
-        top: 30px;
-      }
-
-      .charge-right {
-        right: 80px;
-        top: 30px;
-      }
-
-      .info-panel {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 30px;
-        text-align: center;
-      }
-
-      .info-item {
-        background: #ecf0f1;
-        padding: 15px;
-        border-radius: 10px;
-        min-width: 120px;
-      }
-
-      .info-label {
-        font-weight: bold;
-        color: #7f8c8d;
-        font-size: 12px;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-      }
-
-      .info-value {
-        font-size: 18px;
-        color: #2c3e50;
-        font-weight: bold;
-        padding: 8px 12px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-      }
-
-      .bond-type {
-        background: #2360A1 !important;
-        color: white !important;
-        padding: 20px;
-        border-radius: 10px;
-        font-size: 20px;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 20px;
-        transition: all 0.3s ease;
-      }
-
-      .bond-type.hidden {
-        display: none;
-      }
-
-      .checkbox-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 15px;
-        gap: 10px;
-      }
-
-      .checkbox-container input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-      }
-
-      .checkbox-container label {
-        font-weight: bold;
-        color: #2c3e50;
-        cursor: pointer;
-      }
-
-      .view-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 15px 0;
-        gap: 10px;
-      }
-
-      .toggle-btn {
-        padding: 8px 16px;
-        background: #ecf0f1;
-        border: 2px solid #bdc3c7;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-        color: #7f8c8d;
-        transition: all 0.3s ease;
-        position: relative;
-      }
-
-      .toggle-btn.active {
-        background: #2360A1;
-        border-color: #2360A1;
-        color: white;
-      }
-
-      .toggle-btn:hover {
-        border-color: #F2A128;
-        background: #fdf4e5;
-      }
-
-      .toggle-btn.active:hover {
-        background: #1a4d85;
-        border-color: #1a4d85;
-      }
-
-      .info-icon {
-        margin-left: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        user-select: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: #97AFAE;
-        border: 2px solid #97AFAE;
-        position: relative;
-      }
-
-      .info-icon::before {
-        content: "";
-        width: 2px;
-        height: 8px;
-        background: white;
-        border-radius: 1px;
-        position: absolute;
-        top: 6px;
-      }
-
-      .info-icon::after {
-        content: "";
-        width: 2px;
-        height: 2px;
-        background: white;
-        border-radius: 50%;
-        position: absolute;
-        top: 2px;
-      }
-
-      .toggle-btn.active .info-icon {
-        background: #ffffff;
-        border-color: #97AFAE;
-      }
-
-      .toggle-btn.active .info-icon::before,
-      .toggle-btn.active .info-icon::after {
-        background: #97AFAE;
-      }
-
-      .info-icon:hover {
-        background: #F2A128;
-        border-color: #F2A128;
-        transform: scale(1.1);
-      }
-
-      .toggle-btn.active .info-icon:hover {
-        background: #97AFAE;
-        border-color: #F2A128;
-        transform: scale(1.1);
-      }
-
-      .toggle-btn.active .info-icon:hover::before,
-      .toggle-btn.active .info-icon:hover::after {
-        background: white;
-      }
-
-      .electron-dots-view {
-        position: absolute;
-        width: 450px;
-        height: 200px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        opacity: 0.8;
-        transition: all 0.5s ease;
-        z-index: 5;
-        display: none;
-      }
-
-      .electron-dot {
-        position: absolute;
-        width: 6px;
-        height: 6px;
-        background: white;
-        border-radius: 50%;
-        box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
-        transition: all 0.1s ease;
-        z-index: 20;
-      }
-
-      /* Modal Styles */
-      .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        animation: fadeIn 0.3s ease;
-      }
-
-      .modal-content {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        max-width: 500px;
-        width: 90%;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        animation: slideIn 0.3s ease;
-      }
-
-      /* Tour Styles */
-      .tour-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-        animation: fadeIn 0.3s ease;
-      }
-
-      .tour-callout {
-        position: fixed;
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        max-width: 280px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        border: 3px solid #97AFAE;
-        z-index: 1001;
-        animation: slideIn 0.3s ease;
-      }
-
-      .tour-callout::before {
-        content: "";
-        position: absolute;
-        width: 0;
-        height: 0;
-        border: 12px solid transparent;
-      }
-
-      .tour-callout.point-left::before {
-        border-right-color: #97AFAE;
-        left: -27px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-
-      .tour-callout.point-right::before {
-        border-left-color: #97AFAE;
-        right: -27px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-
-      .tour-callout.point-up::before {
-        border-bottom-color: #97AFAE;
-        top: -27px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
-      .tour-callout.point-down::before {
-        border-top-color: #97AFAE;
-        bottom: -27px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
-      .tour-header {
-        display: flex;
-        justify-content: between;
-        align-items: center;
-        margin-bottom: 15px;
-      }
-
-      .tour-title {
-        font-size: 16px;
-        font-weight: bold;
-        color: #2c3e50;
-        margin: 0;
-        flex-grow: 1;
-      }
-
-      .tour-close {
-        background: none;
-        border: none;
-        font-size: 18px;
-        color: #7f8c8d;
-        cursor: pointer;
-        padding: 0;
-        margin-left: 10px;
-      }
-
-      .tour-close:hover {
-        color: #2c3e50;
-      }
-
-      .tour-content {
-        color: #34495e;
-        line-height: 1.5;
-        margin-bottom: 15px;
-        font-size: 14px;
-      }
-
-      .tour-navigation {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 15px;
-      }
-
-      .tour-counter {
-        font-size: 12px;
-        color: #7f8c8d;
-      }
-
-      .tour-buttons {
-        display: flex;
-        gap: 8px;
-      }
-
-      .tour-btn {
-        padding: 6px 12px;
-        border: 1px solid #bdc3c7;
-        border-radius: 6px;
-        background: #ecf0f1;
-        color: #234568;
-        cursor: pointer;
-        font-size: 12px;
-        transition: all 0.3s ease;
-      }
-
-      .tour-btn:hover {
-        background: #97AFAE;
-        border-color: #97AFAE;
-        color: white;
-      }
-
-      .tour-btn.primary {
-        background: #2360A1;
-        border-color: #2360A1;
-        color: white;
-      }
-
-      .tour-btn.primary:hover {
-        background: #1a4d85;
-        border-color: #1a4d85;
-      }
-
-      .tour-highlight {
-        display: none !important; /* Hide the green highlighting box */
-      }
-
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #ecf0f1;
-      }
-
-      .modal-title {
-        font-size: 20px;
-        font-weight: bold;
-        color: #2c3e50;
-        margin: 0;
-      }
-
-      .modal-close {
-        background: none;
-        border: none;
-        font-size: 24px;
-        color: #7f8c8d;
-        cursor: pointer;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: all 0.3s ease;
-      }
-
-      .modal-close:hover {
-        background: #ecf0f1;
-        color: #2c3e50;
-      }
-
-      .modal-body {
-        color: #34495e;
-        line-height: 1.6;
-        font-size: 16px;
-      }
-
-      .modal-body p {
-        margin-bottom: 15px;
-      }
-
-      .modal-body .highlight {
-        font-weight: bold;
-        color: #2c3e50;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-        to {
-          opacity: 1;
+        #root {
+            min-height: 100vh;
         }
-      }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translate(-50%, -60%);
-        }
-        to {
-          opacity: 1;
-          transform: translate(-50%, -50%);
-        }
-      }
-
-      .ionic {
-        background: #e74c3c !important;
-      }
-      .polar {
-        background: #F2A128 !important;
-      }
-      .nonpolar {
-        background: #97AFAE !important;
-      }
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="mode-tabs">
-        <button class="tab-btn active" onclick="switchMode('intro')">
-          Getting Started
-        </button>
-        <button class="tab-btn" onclick="switchMode('atoms')">
-          Explore More Elements
-        </button>
-        <button class="tab-btn" onclick="switchMode('custom')">
-          Experiment with Custom Values
-        </button>
-      </div>
+</head>
+<body>
+    <div id="root"></div>
 
-      <div class="atom-selection" id="intro-mode">
-        <div class="atom-selector-visual">
-          <label>Choose an atom (first atom):</label>
-          <div class="element-grid">
-            <div
-              class="element-box selected"
-              data-element="H"
-              onclick="selectAtom('intro-atom1', 'H', this)"
-            >
-              <div class="element-symbol">H</div>
-              <div class="element-name">Hydrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="C"
-              onclick="selectAtom('intro-atom1', 'C', this)"
-            >
-              <div class="element-symbol">C</div>
-              <div class="element-name">Carbon</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="N"
-              onclick="selectAtom('intro-atom1', 'N', this)"
-            >
-              <div class="element-symbol">N</div>
-              <div class="element-name">Nitrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="O"
-              onclick="selectAtom('intro-atom1', 'O', this)"
-            >
-              <div class="element-symbol">O</div>
-              <div class="element-name">Oxygen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="F"
-              onclick="selectAtom('intro-atom1', 'F', this)"
-            >
-              <div class="element-symbol">F</div>
-              <div class="element-name">Fluorine</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="S"
-              onclick="selectAtom('intro-atom1', 'S', this)"
-            >
-              <div class="element-symbol">S</div>
-              <div class="element-name">Sulfur</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Cl"
-              onclick="selectAtom('intro-atom1', 'Cl', this)"
-            >
-              <div class="element-symbol">Cl</div>
-              <div class="element-name">Chlorine</div>
-            </div>
-          </div>
-        </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        <div class="atom-selector-visual">
-          <label>Choose an atom (second atom):</label>
-          <div class="element-grid">
-            <div
-              class="element-box"
-              data-element="H"
-              onclick="selectAtom('intro-atom2', 'H', this)"
-            >
-              <div class="element-symbol">H</div>
-              <div class="element-name">Hydrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="C"
-              onclick="selectAtom('intro-atom2', 'C', this)"
-            >
-              <div class="element-symbol">C</div>
-              <div class="element-name">Carbon</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="N"
-              onclick="selectAtom('intro-atom2', 'N', this)"
-            >
-              <div class="element-symbol">N</div>
-              <div class="element-name">Nitrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="O"
-              onclick="selectAtom('intro-atom2', 'O', this)"
-            >
-              <div class="element-symbol">O</div>
-              <div class="element-name">Oxygen</div>
-            </div>
-            <div
-              class="element-box selected"
-              data-element="F"
-              onclick="selectAtom('intro-atom2', 'F', this)"
-            >
-              <div class="element-symbol">F</div>
-              <div class="element-name">Fluorine</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="S"
-              onclick="selectAtom('intro-atom2', 'S', this)"
-            >
-              <div class="element-symbol">S</div>
-              <div class="element-name">Sulfur</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Cl"
-              onclick="selectAtom('intro-atom2', 'Cl', this)"
-            >
-              <div class="element-symbol">Cl</div>
-              <div class="element-name">Chlorine</div>
-            </div>
-          </div>
-        </div>
-      </div>
+        const MolecularInteractionSandbox = () => {
+          // Tab state
+          const [activeTab, setActiveTab] = useState("simple");
 
-      <div class="atom-selection" id="atom-mode" style="display: none">
-        <div class="atom-selector-visual">
-          <label>Choose an atom (first atom):</label>
-          <div class="element-grid">
-            <div
-              class="element-box selected"
-              data-element="H"
-              onclick="selectAtom('full-atom1', 'H', this)"
-            >
-              <div class="element-symbol">H</div>
-              <div class="element-name">Hydrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Li"
-              onclick="selectAtom('full-atom1', 'Li', this)"
-            >
-              <div class="element-symbol">Li</div>
-              <div class="element-name">Lithium</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="C"
-              onclick="selectAtom('full-atom1', 'C', this)"
-            >
-              <div class="element-symbol">C</div>
-              <div class="element-name">Carbon</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="N"
-              onclick="selectAtom('full-atom1', 'N', this)"
-            >
-              <div class="element-symbol">N</div>
-              <div class="element-name">Nitrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="O"
-              onclick="selectAtom('full-atom1', 'O', this)"
-            >
-              <div class="element-symbol">O</div>
-              <div class="element-name">Oxygen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="F"
-              onclick="selectAtom('full-atom1', 'F', this)"
-            >
-              <div class="element-symbol">F</div>
-              <div class="element-name">Fluorine</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Na"
-              onclick="selectAtom('full-atom1', 'Na', this)"
-            >
-              <div class="element-symbol">Na</div>
-              <div class="element-name">Sodium</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Mg"
-              onclick="selectAtom('full-atom1', 'Mg', this)"
-            >
-              <div class="element-symbol">Mg</div>
-              <div class="element-name">Magnesium</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Al"
-              onclick="selectAtom('full-atom1', 'Al', this)"
-            >
-              <div class="element-symbol">Al</div>
-              <div class="element-name">Aluminum</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Si"
-              onclick="selectAtom('full-atom1', 'Si', this)"
-            >
-              <div class="element-symbol">Si</div>
-              <div class="element-name">Silicon</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="P"
-              onclick="selectAtom('full-atom1', 'P', this)"
-            >
-              <div class="element-symbol">P</div>
-              <div class="element-name">Phosphorus</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="S"
-              onclick="selectAtom('full-atom1', 'S', this)"
-            >
-              <div class="element-symbol">S</div>
-              <div class="element-name">Sulfur</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Cl"
-              onclick="selectAtom('full-atom1', 'Cl', this)"
-            >
-              <div class="element-symbol">Cl</div>
-              <div class="element-name">Chlorine</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="K"
-              onclick="selectAtom('full-atom1', 'K', this)"
-            >
-              <div class="element-symbol">K</div>
-              <div class="element-name">Potassium</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Ca"
-              onclick="selectAtom('full-atom1', 'Ca', this)"
-            >
-              <div class="element-symbol">Ca</div>
-              <div class="element-name">Calcium</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Br"
-              onclick="selectAtom('full-atom1', 'Br', this)"
-            >
-              <div class="element-symbol">Br</div>
-              <div class="element-name">Bromine</div>
-            </div>
-          </div>
-        </div>
+          // State variables
+          const [running, setRunning] = useState(true); // Start in running state
+          const [showCharges, setShowCharges] = useState(false);
+          const [potentialEnergy, setPotentialEnergy] = useState(0);
+          const [molecules, setMolecules] = useState([]);
+          const [selectedMoleculeType, setSelectedMoleculeType] = useState("molecule1");
+          const [shakeRecoveryTime, setShakeRecoveryTime] = useState(0);
+          const [shakeIntensity, setShakeIntensity] = useState(0);
+          const [moleculeJustAdded, setMoleculeJustAdded] = useState(false);
+          const [moleculeAddedTime, setMoleculeAddedTime] = useState(0);
+          const [energyRising, setEnergyRising] = useState(false);
+          const [energyRiseProgress, setEnergyRiseProgress] = useState(0);
+          const [addedTypes, setAddedTypes] = useState({
+            polar: false,
+            nonpolar: false,
+            amphipathic: false,
+          });
+          const [slowMotion, setSlowMotion] = useState(false);
+          const [mixingTime, setMixingTime] = useState(0);
+          const [bulkAddCount, setBulkAddCount] = useState(0); // Track bulk additions
+          const [crowdedSettlingTime, setCrowdedSettlingTime] = useState(0); // Extended settling for many molecules
+          const [isSecondBulkAdd, setIsSecondBulkAdd] = useState(false); // Track if this is the second bulk addition
 
-        <div class="atom-selector-visual">
-          <label>Choose an atom (second atom):</label>
-          <div class="element-grid">
-            <div
-              class="element-box"
-              data-element="H"
-              onclick="selectAtom('full-atom2', 'H', this)"
-            >
-              <div class="element-symbol">H</div>
-              <div class="element-name">Hydrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="C"
-              onclick="selectAtom('full-atom2', 'C', this)"
-            >
-              <div class="element-symbol">C</div>
-              <div class="element-name">Carbon</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="N"
-              onclick="selectAtom('full-atom2', 'N', this)"
-            >
-              <div class="element-symbol">N</div>
-              <div class="element-name">Nitrogen</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="O"
-              onclick="selectAtom('full-atom2', 'O', this)"
-            >
-              <div class="element-symbol">O</div>
-              <div class="element-name">Oxygen</div>
-            </div>
-            <div
-              class="element-box selected"
-              data-element="F"
-              onclick="selectAtom('full-atom2', 'F', this)"
-            >
-              <div class="element-symbol">F</div>
-              <div class="element-name">Fluorine</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Si"
-              onclick="selectAtom('full-atom2', 'Si', this)"
-            >
-              <div class="element-symbol">Si</div>
-              <div class="element-name">Silicon</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="P"
-              onclick="selectAtom('full-atom2', 'P', this)"
-            >
-              <div class="element-symbol">P</div>
-              <div class="element-name">Phosphorus</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="S"
-              onclick="selectAtom('full-atom2', 'S', this)"
-            >
-              <div class="element-symbol">S</div>
-              <div class="element-name">Sulfur</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Cl"
-              onclick="selectAtom('full-atom2', 'Cl', this)"
-            >
-              <div class="element-symbol">Cl</div>
-              <div class="element-name">Chlorine</div>
-            </div>
-            <div
-              class="element-box"
-              data-element="Br"
-              onclick="selectAtom('full-atom2', 'Br', this)"
-            >
-              <div class="element-symbol">Br</div>
-              <div class="element-name">Bromine</div>
-            </div>
-          </div>
-        </div>
-      </div>
+          const SLOW_MOTION_FACTOR = 0.25;
+          const UPRIGHT_ORIENTATION = 0;
+          const MAX_WOBBLE = Math.PI / 18;
+          const MIXING_DURATION = 120;
 
-      <div class="custom-controls" id="custom-mode">
-        <div class="slider-container">
-          <div class="slider-group">
-            <div class="slider-label">Atom A</div>
-            <input
-              type="range"
-              class="en-slider"
-              id="en-slider-1"
-              min="0.5"
-              max="4.0"
-              step="0.01"
-              value="2.20"
-            />
-            <div class="en-value" id="en-value-1">2.20</div>
-          </div>
-          <div class="slider-group">
-            <div class="slider-label">Atom B</div>
-            <input
-              type="range"
-              class="en-slider"
-              id="en-slider-2"
-              min="0.5"
-              max="4.0"
-              step="0.01"
-              value="3.98"
-            />
-            <div class="en-value" id="en-value-2">3.98</div>
-          </div>
-        </div>
-      </div>
+          // Constants
+          const CANVAS_WIDTH = 800;
+          const CANVAS_HEIGHT = 600;
+          const WATER_HEIGHT = CANVAS_HEIGHT / 2;
+          const OIL_HEIGHT = CANVAS_HEIGHT / 2;
+          const STABLE_ENERGY = 10;
+          const MOLECULE_ADDED_ENERGY_BOOST = 20;
+          const MOLECULE_ADDED_RECOVERY_TIME = 90;
+          const FIXED_SPEED = 1.7;
 
-      <div class="view-toggle" id="view-toggle">
-        <div class="toggle-btn active" onclick="switchView('cloud')">
-          Charge Distribution View
-          <span
-            class="info-icon"
-            onclick="event.stopPropagation(); startTour('charge')"
-          ></span>
-        </div>
-        <div class="toggle-btn" onclick="switchView('dots')">
-          Moving Electrons View
-          <span
-            class="info-icon"
-            onclick="event.stopPropagation(); showModal('electrons-modal')"
-          ></span>
-        </div>
-      </div>
+          // Molecule types mapping
+          const moleculeTypeMapping = {
+            molecule1: "polar", // Water
+            molecule2: "polar",
+            molecule3: "nonpolar", // Oil
+            molecule4: "nonpolar",
+            molecule5: "amphipathic",
+            molecule6: "amphipathic",
+            random: "random",
+          };
 
-      <div class="bond-container">
-        <div class="electron-cloud" id="electron-cloud"></div>
-        <!-- New ionic clouds -->
-        <div class="ionic-cloud-left" id="ionic-cloud-left"></div>
-        <div class="ionic-cloud-right" id="ionic-cloud-right"></div>
-        <div class="electron-dots-view" id="electron-dots-view">
-          <div class="electron-dot" id="electron-1"></div>
-          <div class="electron-dot" id="electron-2"></div>
-        </div>
-        <div class="bond-line"></div>
-        <div class="atom atom1" id="atom1">H</div>
-        <div class="atom atom2" id="atom2">F</div>
-        <div class="charge-symbol charge-left" id="charge-left"></div>
-        <div class="charge-symbol charge-right" id="charge-right"></div>
-      </div>
+          // Canvas refs
+          const canvasRef = useRef(null);
+          const frameRef = useRef(null);
 
-      <div class="info-panel">
-        <div class="info-item">
-          <div class="info-label">Atom A<br />Electronegativity</div>
-          <div class="info-value" id="en1">2.20</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Electronegativity<br />Difference</div>
-          <div class="info-value" id="en-diff">1.7</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Atom B<br />Electronegativity</div>
-          <div class="info-value" id="en2">3.98</div>
-        </div>
-      </div>
+          // Reset when switching tabs but preserve running state
+          useEffect(() => {
+            setMolecules([]);
+            setPotentialEnergy(0);
+            setShakeRecoveryTime(0);
+            setShakeIntensity(0);
+            setMoleculeJustAdded(false);
+            setMoleculeAddedTime(0);
+            setEnergyRising(false);
+            setEnergyRiseProgress(0);
+            setMixingTime(0);
+            setBulkAddCount(0); // Reset bulk add count when switching tabs
+            setCrowdedSettlingTime(0); // Reset crowded settling time
+            setIsSecondBulkAdd(false); // Reset second bulk add flag
+            // Don't change running state when switching tabs
+          }, [activeTab]);
 
-      <div class="checkbox-container">
-        <input type="checkbox" id="show-bond-type" checked />
-        <label for="show-bond-type">Show Bond Type Classification</label>
-      </div>
+          // Initialize molecules
+          useEffect(() => {
+            resetSimulation();
+          }, []);
 
-      <div class="bond-type" id="bond-type">Polar Covalent</div>
-    </div>
+          // Animation loop
+          useEffect(() => {
+            if (!running) return;
 
-    <!-- Tour System -->
-    <div class="tour-overlay" id="tour-overlay" onclick="closeTour(event)">
-      <div class="tour-highlight" id="tour-highlight"></div>
-      <div
-        class="tour-callout"
-        id="tour-callout"
-        onclick="event.stopPropagation()"
-      >
-        <div class="tour-header">
-          <h4 class="tour-title" id="tour-title">Step 1 of 4</h4>
-          <button class="tour-close" onclick="closeTour()">&times;</button>
-        </div>
-        <div class="tour-content" id="tour-content">Content goes here</div>
-        <div class="tour-navigation">
-          <div class="tour-counter" id="tour-counter">1 / 4</div>
-          <div class="tour-buttons">
-            <button class="tour-btn" id="tour-prev" onclick="prevTourStep()">
-              Previous
-            </button>
-            <button
-              class="tour-btn primary"
-              id="tour-next"
-              onclick="nextTourStep()"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            const render = () => {
+              const canvas = canvasRef.current;
+              if (!canvas) return;
 
-    <!-- Modals -->
-    <div class="modal-overlay" id="charge-modal" onclick="closeModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-          <h3 class="modal-title">Charge Distribution View</h3>
-          <button class="modal-close" onclick="closeModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>
-            This view shows how electric charge is distributed across the
-            molecule's surface.
-          </p>
-          <p>
-            <span class="highlight">Areas with partial positive charge</span>
-            are shaded in
-            <span style="color: #0064ff; font-weight: bold">blue</span>, with
-            greater charge represented by more intense blue coloring.
-          </p>
-          <p>
-            <span class="highlight">Areas with partial negative charge</span>
-            are shaded in
-            <span style="color: #ff0000; font-weight: bold">red</span>, with
-            greater charge represented by more intense red coloring.
-          </p>
-          <p>
-            <span class="highlight">Areas with no charge separation</span> are
-            represented with a neutral gray color or lack of coloring.
-          </p>
-          <p>
-            <span class="highlight">The δ (delta) symbols</span> indicate
-            partial charges: δ+ means partial positive charge and δ− means
-            partial negative charge. These symbols show which atom pulls
-            electrons more strongly in the bond.
-          </p>
-          <p>
-            The intensity of the colors indicates the strength of the charge
-            separation - stronger colors mean greater polarity.
-          </p>
-        </div>
-      </div>
-    </div>
+              const ctx = canvas.getContext("2d");
+              updateMolecules(slowMotion ? SLOW_MOTION_FACTOR : 1.0);
+              drawScene(ctx);
+              calculatePotentialEnergy();
 
-    <div class="modal-overlay" id="electrons-modal" onclick="closeModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-          <h3 class="modal-title">Moving Electrons View</h3>
-          <button class="modal-close" onclick="closeModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>
-            This view shows the dynamic behavior of electrons in the chemical
-            bond.
-            <span class="highlight"
-              >White dots represent individual electrons</span
-            >
-            that move around both atoms participating in forming the bond.
-          </p>
-          <p>
-            <span class="highlight">The dark background</span> represents the
-            overall electron cloud region.
-          </p>
-          </p>
-        </div>
-      </div>
-    </div>
+              frameRef.current = requestAnimationFrame(render);
+            };
 
-    <script>
-      const electronegativity = {
-        H: 2.2,
-        Li: 0.98,
-        C: 2.55,
-        N: 3.04,
-        O: 3.44,
-        F: 3.98,
-        Na: 0.93,
-        Mg: 1.31,
-        Al: 1.61,
-        Si: 1.9,
-        P: 2.19,
-        S: 2.58,
-        Cl: 3.16,
-        K: 0.82,
-        Ca: 1.0,
-        Br: 2.96,
-        I: 2.66,
-      };
+            frameRef.current = requestAnimationFrame(render);
 
-      let currentMode = "intro";
-      let currentTourStep = 0;
-      let tourSteps = [];
+            return () => {
+              if (frameRef.current) {
+                cancelAnimationFrame(frameRef.current);
+              }
+            };
+          }, [
+            running,
+            molecules,
+            showCharges,
+            shakeRecoveryTime,
+            shakeIntensity,
+            potentialEnergy,
+            slowMotion,
+            moleculeJustAdded,
+            moleculeAddedTime,
+            energyRising,
+            energyRiseProgress,
+            mixingTime,
+            crowdedSettlingTime,
+            isSecondBulkAdd,
+          ]);
 
-      function startTour(tourType) {
-        if (tourType === "charge") {
-          // Make sure we're in the right view
-          if (currentView !== "cloud") {
-            switchView("cloud");
-          }
-
-          // Set up tour steps for charge distribution
-          tourSteps = [
-            {
-              title: "Partial Negative Charge",
-              content:
-                "Areas shaded in <strong style='color: #ff0000;'>red</strong> represent regions that have partial negative charge.",
-              target: "electron-cloud",
-              position: "right",
-            },
-            {
-              title: "Partial Positive Charge",
-              content:
-                "Areas shaded in <strong style='color: #0064ff;'>blue</strong> represent regions that have a partial positive charge.",
-              target: "electron-cloud",
-              position: "left",
-            },
-            {
-              title: "Delta Symbols",
-              content:
-                "The <strong>δ (delta) symbols</strong> indicate partial charges.",
-              target: "charge-left",
-              position: "up",
-            },
-            {
-              title: "Gray Areas",
-              content:
-                "<strong style='color: #95a5a6;'>Gray areas</strong> are regions with no charge.",
-              target: "intro-mode",
-              position: "up",
-            },
-          ];
-        }
-
-        currentTourStep = 0;
-        showTourStep();
-        document.getElementById("tour-overlay").style.display = "block";
-      }
-
-      function showTourStep() {
-        const step = tourSteps[currentTourStep];
-        const callout = document.getElementById("tour-callout");
-
-        // Update content
-        document.getElementById("tour-title").textContent = step.title;
-        document.getElementById("tour-content").innerHTML = step.content;
-        document.getElementById("tour-counter").textContent = `${
-          currentTourStep + 1
-        } / ${tourSteps.length}`;
-
-        // Update navigation buttons
-        document.getElementById("tour-prev").style.display =
-          currentTourStep > 0 ? "inline-block" : "none";
-        document.getElementById("tour-next").textContent =
-          currentTourStep < tourSteps.length - 1 ? "Next" : "Finish";
-
-        // Position callout (no highlight positioning needed)
-        positionTourElements(step);
-      }
-
-      function positionTourElements(step) {
-        const callout = document.getElementById("tour-callout");
-        const target = document.getElementById(step.target);
-
-        if (!target) return;
-
-        const targetRect = target.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        // Reset callout classes
-        callout.className = "tour-callout";
-        callout.style.position = "fixed";
-
-        // Position callout based on step position
-        let calloutLeft, calloutTop;
-        const calloutWidth = 280;
-        const calloutHeight = 160;
-
-        switch (step.position) {
-          case "right":
-            calloutLeft = targetRect.right + 20;
-            calloutTop =
-              targetRect.top + targetRect.height / 2 - calloutHeight / 2;
-            callout.classList.add("point-left");
-
-            // Keep on screen
-            if (calloutLeft + calloutWidth > viewportWidth) {
-              calloutLeft = targetRect.left - calloutWidth - 20;
-              callout.className = "tour-callout point-right";
+          // Force initial redraw
+          useEffect(() => {
+            const canvas = canvasRef.current;
+            if (canvas) {
+              const ctx = canvas.getContext("2d");
+              drawScene(ctx);
             }
-            break;
+          }, []);
 
-          case "left":
-            calloutLeft = targetRect.left - calloutWidth - 20;
-            calloutTop =
-              targetRect.top + targetRect.height / 2 - calloutHeight / 2;
-            callout.classList.add("point-right");
-
-            // Keep on screen
-            if (calloutLeft < 20) {
-              calloutLeft = targetRect.right + 20;
-              callout.className = "tour-callout point-left";
+          // Enhanced shake function with smooth energy rise
+          const shakeMolecules = () => {
+            if (!running) {
+              setRunning(true);
             }
-            break;
 
-          case "up":
-            calloutLeft =
-              targetRect.left + targetRect.width / 2 - calloutWidth / 2;
-            calloutTop = targetRect.top - calloutHeight - 10;
-            callout.classList.add("point-down");
+            setMixingTime(MIXING_DURATION);
+            setShakeRecoveryTime(400);
+            setShakeIntensity(2.0);
+            setEnergyRising(true);
+            setEnergyRiseProgress(0);
 
-            // Keep on screen
-            if (calloutTop < 20) {
-              calloutTop = targetRect.bottom + 20;
-              callout.className = "tour-callout point-up";
+            setMolecules((prevMolecules) => {
+              return prevMolecules.map((molecule) => {
+                const randomVx = (Math.random() - 0.5) * 80;
+                const randomVy = (Math.random() - 0.5) * 80;
+                const teleportChance = molecule.type === "amphipathic" ? 0.5 : 0.3;
+
+                let randomOrientation = undefined;
+                if (molecule.type === "amphipathic") {
+                  randomOrientation = Math.random() * Math.PI * 2;
+                }
+
+                if (Math.random() < teleportChance) {
+                  return {
+                    ...molecule,
+                    x: Math.random() * CANVAS_WIDTH,
+                    y: Math.random() * CANVAS_HEIGHT,
+                    vx: randomVx,
+                    vy: randomVy,
+                    speedMultiplier: 2.3,
+                    ...(randomOrientation !== undefined && {
+                      orientation: randomOrientation,
+                    }),
+                  };
+                }
+
+                return {
+                  ...molecule,
+                  vx: randomVx,
+                  vy: randomVy,
+                  speedMultiplier: 2.3,
+                  ...(randomOrientation !== undefined && {
+                    orientation: randomOrientation,
+                  }),
+                };
+              });
+            });
+
+            const canvas = canvasRef.current;
+            if (canvas) {
+              const ctx = canvas.getContext("2d");
+              drawScene(ctx);
             }
-            break;
+          };
 
-          case "down":
-            calloutLeft =
-              targetRect.left + targetRect.width / 2 - calloutWidth / 2;
-            calloutTop = targetRect.bottom + 20;
-            callout.classList.add("point-up");
+          // Create a molecule with a specific color variant
+          const createMoleculeWithVariant = (type, variantIndex) => {
+            // During mixing period in simple mode, spawn randomly across entire canvas
+            let x, y, angle;
 
-            // Keep on screen
-            if (calloutTop + calloutHeight > viewportHeight) {
-              calloutTop = targetRect.top - calloutHeight - 20;
-              callout.className = "tour-callout point-down";
+            if (activeTab === "simple" && mixingTime > 0) {
+              // Random position anywhere on canvas during mixing
+              x = Math.random() * CANVAS_WIDTH;
+              y = Math.random() * CANVAS_HEIGHT;
+              angle = Math.random() * Math.PI * 2; // Random direction
+            } else {
+              // Normal spawn from top
+              x = Math.random() * CANVAS_WIDTH;
+              y = 20 + Math.random() * 30;
+              angle = Math.PI / 2 + (Math.random() - 0.5) * 0.8;
             }
-            break;
-        }
+            const speed = FIXED_SPEED;
 
-        // Final boundary checks
-        calloutLeft = Math.max(
-          20,
-          Math.min(calloutLeft, viewportWidth - calloutWidth - 20)
-        );
-        calloutTop = Math.max(
-          20,
-          Math.min(calloutTop, viewportHeight - calloutHeight - 20)
-        );
+            const typeColors = {
+              polar: ["#3498db", "#CC6677"],
+              nonpolar: ["#E69F00", "#009E73"],
+              amphipathic: ["#9b59b6", "#DA70D6"],
+            };
 
-        callout.style.left = calloutLeft + "px";
-        callout.style.top = calloutTop + "px";
-      }
+            const colorIndex = variantIndex;
+            const stableColor = typeColors[type][colorIndex];
 
-      function nextTourStep() {
-        if (currentTourStep < tourSteps.length - 1) {
-          currentTourStep++;
-          showTourStep();
-        } else {
-          closeTour();
-        }
-      }
+            const baseProperties = {
+              x,
+              y,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              radius: activeTab === "simple" ? 20 : 15, // Bigger molecules in simple mode
+              color: stableColor,
+              colorVariant: colorIndex,
+            };
 
-      function prevTourStep() {
-        if (currentTourStep > 0) {
-          currentTourStep--;
-          showTourStep();
-        }
-      }
+            switch (type) {
+              case "polar":
+                return {
+                  ...baseProperties,
+                  type: "polar",
+                  preferredRegion: "water",
+                  partialCharge: {
+                    positive: { x: 0, y: -7 },
+                    negative: { x: 0, y: 7 },
+                  },
+                  orientation: Math.random() * Math.PI * 2,
+                  rotationVelocity: 0,
+                  rotationDamping: 0.98,
+                };
+              case "nonpolar":
+                return {
+                  ...baseProperties,
+                  type: "nonpolar",
+                  preferredRegion: "oil",
+                  partialCharge: null,
+                };
+              case "amphipathic":
+                return {
+                  ...baseProperties,
+                  type: "amphipathic",
+                  preferredRegion: "interface",
+                  partialCharge: {
+                    positive: { x: 0, y: -7 },
+                    negative: { x: 0, y: 0 },
+                  },
+                  orientation: UPRIGHT_ORIENTATION,
+                  rotationDirection: Math.random() > 0.5 ? 1 : -1,
+                  rotationRate: Math.random() * 0.02 + 0.01,
+                  wobbleFrequency: 0.01 + Math.random() * 0.02,
+                  wobblePhase: Math.random() * Math.PI * 2,
+                  wobbleTimer: 0,
+                };
+              default:
+                return baseProperties;
+            }
+          };
 
-      function closeTour(event) {
-        if (event && event.target.classList.contains("tour-callout")) {
-          return;
-        }
-        document.getElementById("tour-overlay").style.display = "none";
-      }
+          // Add bulk molecules function (for "Add a bunch" button)
+          const addBulkMolecules = () => {
+            // Check if we've already added bulk molecules twice
+            if (bulkAddCount >= 2) {
+              return; // Silently do nothing if limit reached
+            }
 
-      function switchMode(mode) {
-        currentMode = mode;
+            const isSecondAdd = bulkAddCount === 1;
 
-        // Update tab buttons
-        document
-          .querySelectorAll(".tab-btn")
-          .forEach((btn) => btn.classList.remove("active"));
-        event.target.classList.add("active");
+            const newMolecules = [];
+            const numMolecules = 75;
 
-        // Show/hide appropriate controls
-        const introMode = document.getElementById("intro-mode");
-        const atomMode = document.getElementById("atom-mode");
-        const customMode = document.getElementById("custom-mode");
-        const viewToggle = document.getElementById("view-toggle");
+            for (let i = 0; i < numMolecules; i++) {
+              const simpleTypes = ["molecule1", "molecule3"]; // Water and Oil only
+              const randomTypeKey =
+                simpleTypes[Math.floor(Math.random() * simpleTypes.length)];
+              const randomVariant = 0; // Always use variant 0 for consistent colors in simple mode
+              const actualType = moleculeTypeMapping[randomTypeKey];
+              const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+              newMolecules.push(newMolecule);
+            }
 
-        // Hide all modes first
-        introMode.style.display = "none";
-        atomMode.style.display = "none";
-        customMode.style.display = "none";
-        viewToggle.style.display = "none";
+            setMolecules((prev) => {
+              const updatedMolecules = [...prev, ...newMolecules];
+              const totalMolecules = updatedMolecules.length;
 
-        // Stop electron animation when switching modes
-        if (electronAnimation) {
-          cancelAnimationFrame(electronAnimation);
-          electronAnimation = null;
-        }
+              if (isSecondAdd) {
+                // Much longer settling for second bulk addition
+                setCrowdedSettlingTime(1200 + (totalMolecules - 50) * 8); // Base 20 seconds + extra time
+                setIsSecondBulkAdd(true);
+              } else if (totalMolecules >= 50) {
+                // Normal extended settling for first bulk addition
+                setCrowdedSettlingTime(600 + (totalMolecules - 50) * 4); // Base 10 seconds + extra time
+                setIsSecondBulkAdd(false);
+              }
 
-        // Reset to cloud view
-        currentView = "cloud";
-        document.getElementById("electron-cloud").style.display = "block";
-        document.getElementById("electron-dots-view").style.display = "none";
-        document.getElementById("ionic-cloud-left").style.display = "none";
-        document.getElementById("ionic-cloud-right").style.display = "none";
-        document.querySelectorAll(".toggle-btn").forEach((btn, index) => {
-          btn.classList.toggle("active", index === 0);
-        });
+              return updatedMolecules;
+            });
+            setBulkAddCount((prev) => prev + 1); // Increment bulk add count
 
-        if (mode === "intro") {
-          introMode.style.display = "flex";
-          viewToggle.style.display = "flex";
-          updateBondFromIntro();
-        } else if (mode === "atoms") {
-          atomMode.style.display = "flex";
-          updateBondFromFull();
-        } else {
-          customMode.style.display = "flex";
-          updateBondFromSliders();
-        }
-      }
+            // Trigger energy rise animation like shaking for bulk addition
+            setEnergyRising(true);
+            setEnergyRiseProgress(0);
 
-      function showModal(modalId) {
-        document.getElementById(modalId).style.display = "block";
-      }
+            // Also set shake recovery to create the energy spike effect
+            setShakeRecoveryTime(400);
+            setShakeIntensity(2.0);
 
-      function closeModal(event) {
-        if (event && event.target.classList.contains("modal-content")) {
-          return; // Don't close if clicking on modal content
-        }
-        document.querySelectorAll(".modal-overlay").forEach((modal) => {
-          modal.style.display = "none";
-        });
-      }
+            // Start mixing timer when first molecule is added
+            if (molecules.length === 0) {
+              setMixingTime(120);
+            }
 
-      // Close modal/tour on Escape key
-      document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") {
-          closeModal();
-          closeTour();
-        }
-      });
+            setMoleculeJustAdded(true);
+            setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
 
-      // Reposition tour on window resize
-      window.addEventListener("resize", function () {
-        if (
-          document.getElementById("tour-overlay").style.display === "block" &&
-          tourSteps.length > 0
-        ) {
-          setTimeout(
-            () => positionTourElements(tourSteps[currentTourStep]),
-            100
+            if (!running) {
+              setRunning(true);
+            }
+          };
+
+          // Add random molecule function (for single molecule)
+          const addRandomMolecule = () => {
+            if (activeTab === "simple") {
+              // Simple tab - add single random water or oil molecule
+              const simpleTypes = ["molecule1", "molecule3"]; // Water and Oil only
+              const randomTypeKey =
+                simpleTypes[Math.floor(Math.random() * simpleTypes.length)];
+              const randomVariant = 0; // Always use variant 0 for consistent colors in simple mode
+              const actualType = moleculeTypeMapping[randomTypeKey];
+              const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+              setMolecules((prev) => [...prev, newMolecule]);
+            } else {
+              // Advanced tab - full functionality
+              const allTypesAdded =
+                addedTypes.polar && addedTypes.nonpolar && addedTypes.amphipathic;
+              let availableTypes = [];
+
+              if (!allTypesAdded) {
+                if (!addedTypes.polar) availableTypes.push("molecule1", "molecule2");
+                if (!addedTypes.nonpolar) availableTypes.push("molecule3", "molecule4");
+                if (!addedTypes.amphipathic)
+                  availableTypes.push("molecule5", "molecule6");
+              }
+
+              if (allTypesAdded || availableTypes.length === 0) {
+                availableTypes = Object.keys(moleculeTypeMapping).filter(
+                  (type) => type !== "random"
+                );
+              }
+
+              const randomTypeKey =
+                availableTypes[Math.floor(Math.random() * availableTypes.length)];
+              const randomVariant = Math.floor(Math.random() * 2);
+              const actualType = moleculeTypeMapping[randomTypeKey];
+              const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+
+              setAddedTypes((prev) => ({
+                ...prev,
+                [actualType]: true,
+              }));
+
+              setMolecules((prev) => [...prev, newMolecule]);
+            }
+
+            // Start mixing timer when first molecule is added
+            if (molecules.length === 0) {
+              setMixingTime(activeTab === "simple" ? 120 : MIXING_DURATION);
+            }
+
+            setMoleculeJustAdded(true);
+            setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
+
+            if (!running) {
+              setRunning(true);
+            }
+          };
+
+          // Add 5 random molecules function (for advanced tab)
+          const add5RandomMolecules = () => {
+            const allTypesAdded =
+              addedTypes.polar && addedTypes.nonpolar && addedTypes.amphipathic;
+
+            for (let i = 0; i < 5; i++) {
+              let availableTypes = [];
+
+              if (!allTypesAdded) {
+                if (!addedTypes.polar) availableTypes.push("molecule1", "molecule2");
+                if (!addedTypes.nonpolar) availableTypes.push("molecule3", "molecule4");
+                if (!addedTypes.amphipathic)
+                  availableTypes.push("molecule5", "molecule6");
+              }
+
+              if (allTypesAdded || availableTypes.length === 0) {
+                availableTypes = Object.keys(moleculeTypeMapping).filter(
+                  (type) => type !== "random"
+                );
+              }
+
+              const randomTypeKey =
+                availableTypes[Math.floor(Math.random() * availableTypes.length)];
+              const randomVariant = Math.floor(Math.random() * 2);
+              const actualType = moleculeTypeMapping[randomTypeKey];
+              const newMolecule = createMoleculeWithVariant(actualType, randomVariant);
+
+              setAddedTypes((prev) => ({
+                ...prev,
+                [actualType]: true,
+              }));
+
+              setMolecules((prev) => [...prev, newMolecule]);
+            }
+
+            // Start mixing timer when first molecule is added
+            if (molecules.length === 0) {
+              setMixingTime(MIXING_DURATION);
+            }
+
+            setMoleculeJustAdded(true);
+            setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
+
+            if (!running) {
+              setRunning(true);
+            }
+          };
+
+          // Add specific molecule
+          const addMolecule = () => {
+            if (selectedMoleculeType === "random") {
+              addRandomMolecule();
+              return;
+            }
+
+            const actualType = moleculeTypeMapping[selectedMoleculeType];
+            const colorVariant =
+              selectedMoleculeType.endsWith("1") ||
+              selectedMoleculeType.endsWith("3") ||
+              selectedMoleculeType.endsWith("5")
+                ? 0
+                : 1;
+
+            const newMolecule = createMoleculeWithVariant(actualType, colorVariant);
+            setMolecules((prev) => [...prev, newMolecule]);
+
+            if (molecules.length === 0) {
+              setMixingTime(MIXING_DURATION);
+            }
+
+            setMoleculeJustAdded(true);
+            setMoleculeAddedTime(MOLECULE_ADDED_RECOVERY_TIME);
+
+            if (!running) {
+              setRunning(true);
+            }
+          };
+
+          // Reset the simulation
+          const resetSimulation = () => {
+            setMolecules([]);
+            setPotentialEnergy(0);
+            setRunning(false); // Pause when explicitly resetting
+            setShakeRecoveryTime(0);
+            setShakeIntensity(0);
+            setMoleculeJustAdded(false);
+            setMoleculeAddedTime(0);
+            setEnergyRising(false);
+            setEnergyRiseProgress(0);
+            setMixingTime(0);
+            setBulkAddCount(0); // Reset bulk add count
+            setCrowdedSettlingTime(0); // Reset crowded settling time
+            setIsSecondBulkAdd(false); // Reset second bulk add flag
+
+            if (frameRef.current) {
+              cancelAnimationFrame(frameRef.current);
+            }
+
+            const canvas = canvasRef.current;
+            if (canvas) {
+              const ctx = canvas.getContext("2d");
+              drawScene(ctx);
+            }
+          };
+
+          // Helper function for smooth easing
+          const easeOutCubic = (x) => {
+            return 1 - Math.pow(1 - x, 3);
+          };
+
+          // Update molecules
+          const updateMolecules = (speedFactor = 1.0) => {
+            if (mixingTime > 0) {
+              setMixingTime((prevTime) => Math.max(0, prevTime - speedFactor));
+            }
+
+            if (crowdedSettlingTime > 0) {
+              setCrowdedSettlingTime((prevTime) => Math.max(0, prevTime - speedFactor));
+            }
+
+            if (shakeRecoveryTime > 0) {
+              setShakeRecoveryTime((prevTime) => {
+                return Math.max(0, prevTime - speedFactor);
+              });
+
+              const normalizedTime = shakeRecoveryTime / 360;
+              setShakeIntensity(easeOutCubic(normalizedTime));
+            }
+
+            setMolecules((prevMolecules) => {
+              return prevMolecules.map((molecule) => {
+                let {
+                  x,
+                  y,
+                  vx,
+                  vy,
+                  type,
+                  preferredRegion,
+                  speedMultiplier = 1.0,
+                } = molecule;
+
+                const effectiveSpeed =
+                  FIXED_SPEED * (1.0 + (speedMultiplier - 1.0) * shakeIntensity);
+                const shouldApplyForces = mixingTime <= 0;
+                const forceStrength =
+                  shakeRecoveryTime > 0
+                    ? 0.05 + 0.95 * (1 - shakeIntensity * 0.8)
+                    : 1.0;
+
+                if (shouldApplyForces) {
+                  if (preferredRegion === "water") {
+                    if (y < WATER_HEIGHT) {
+                      vy += 0.8 * forceStrength * speedFactor;
+                    }
+                  } else if (preferredRegion === "oil") {
+                    if (y > WATER_HEIGHT) {
+                      vy -= 0.8 * forceStrength * speedFactor;
+                    }
+                  } else if (preferredRegion === "interface") {
+                    if (shakeRecoveryTime < 240) {
+                      const distFromInterface = y - WATER_HEIGHT;
+                      const amphipathicForceMultiplier =
+                        shakeRecoveryTime > 0 ? forceStrength * 0.7 : forceStrength;
+                      vy -=
+                        distFromInterface *
+                        0.15 *
+                        amphipathicForceMultiplier *
+                        speedFactor;
+                    }
+
+                    if (
+                      molecule.orientation !== undefined &&
+                      molecule.type === "amphipathic"
+                    ) {
+                      if (shakeRecoveryTime === 0) {
+                        molecule.wobbleTimer =
+                          (molecule.wobbleTimer || 0) + speedFactor;
+                        const wobbleAmount =
+                          Math.sin(
+                            molecule.wobbleTimer * molecule.wobbleFrequency +
+                              molecule.wobblePhase
+                          ) * MAX_WOBBLE;
+                        molecule.orientation = UPRIGHT_ORIENTATION + wobbleAmount;
+                      } else if (shakeRecoveryTime < 180) {
+                        const currentOrientation = molecule.orientation;
+                        molecule.wobbleTimer =
+                          (molecule.wobbleTimer || 0) + speedFactor;
+                        const targetWobble =
+                          Math.sin(
+                            molecule.wobbleTimer * molecule.wobbleFrequency +
+                              molecule.wobblePhase
+                          ) * MAX_WOBBLE;
+                        const targetOrientation = UPRIGHT_ORIENTATION + targetWobble;
+
+                        let delta = targetOrientation - currentOrientation;
+                        if (delta > Math.PI) delta -= Math.PI * 2;
+                        if (delta < -Math.PI) delta += Math.PI * 2;
+
+                        molecule.orientation =
+                          currentOrientation + delta * 0.05 * speedFactor;
+                      }
+                    }
+                  }
+                }
+
+                if (shakeRecoveryTime > 0) {
+                  const randomFactor = shakeIntensity * 0.4 * speedFactor;
+                  vx += (Math.random() - 0.5) * randomFactor;
+                  vy += (Math.random() - 0.5) * randomFactor;
+                }
+
+                const speed = effectiveSpeed;
+                const currentSpeed = Math.sqrt(vx * vx + vy * vy);
+                const scaleFactor = speed / Math.max(0.1, currentSpeed);
+                vx *= scaleFactor;
+                vy *= scaleFactor;
+
+                x += vx * speedFactor;
+                y += vy * speedFactor;
+
+                // Boundary checking
+                if (x < molecule.radius) {
+                  x = molecule.radius;
+                  vx = -vx;
+                  if (molecule.type === "polar") {
+                    const rotationReduction =
+                      activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+                    molecule.rotationVelocity =
+                      Math.max(
+                        -0.3,
+                        Math.min(
+                          0.3,
+                          molecule.rotationVelocity +
+                            (Math.random() * 0.3 - 0.15) * rotationReduction
+                        )
+                      ) * speedFactor;
+                  }
+                } else if (x > CANVAS_WIDTH - molecule.radius) {
+                  x = CANVAS_WIDTH - molecule.radius;
+                  vx = -vx;
+                  if (molecule.type === "polar") {
+                    const rotationReduction =
+                      activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+                    molecule.rotationVelocity =
+                      Math.max(
+                        -0.3,
+                        Math.min(
+                          0.3,
+                          molecule.rotationVelocity +
+                            (Math.random() * 0.3 - 0.15) * rotationReduction
+                        )
+                      ) * speedFactor;
+                  }
+                }
+
+                if (y < molecule.radius) {
+                  y = molecule.radius;
+                  vy = -vy;
+                  if (molecule.type === "polar") {
+                    const rotationReduction =
+                      activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+                    molecule.rotationVelocity =
+                      Math.max(
+                        -0.3,
+                        Math.min(
+                          0.3,
+                          molecule.rotationVelocity +
+                            (Math.random() * 0.3 - 0.15) * rotationReduction
+                        )
+                      ) * speedFactor;
+                  }
+                } else if (y > CANVAS_HEIGHT - molecule.radius) {
+                  y = CANVAS_HEIGHT - molecule.radius;
+                  vy = -vy;
+                  if (molecule.type === "polar") {
+                    const rotationReduction =
+                      activeTab === "advanced" || molecules.length > 50 ? 0.2 : 1.0; // More reduction in advanced tab
+                    molecule.rotationVelocity =
+                      Math.max(
+                        -0.3,
+                        Math.min(
+                          0.3,
+                          molecule.rotationVelocity +
+                            (Math.random() * 0.3 - 0.15) * rotationReduction
+                        )
+                      ) * speedFactor;
+                  }
+                }
+
+                if (
+                  molecule.type === "polar" &&
+                  molecule.rotationVelocity !== undefined
+                ) {
+                  molecule.orientation =
+                    (molecule.orientation + molecule.rotationVelocity * speedFactor) %
+                    (Math.PI * 2);
+                  if (molecule.orientation < 0) molecule.orientation += Math.PI * 2;
+
+                  // Increase damping when in advanced tab or there are many molecules to reduce crazy spinning
+                  const dampingFactor =
+                    activeTab === "advanced" || molecules.length > 50
+                      ? 0.88
+                      : molecule.rotationDamping;
+                  molecule.rotationVelocity *= dampingFactor;
+                }
+
+                // Handle collisions with other molecules
+                prevMolecules.forEach((otherMolecule) => {
+                  if (molecule === otherMolecule) return;
+
+                  const dx = otherMolecule.x - x;
+                  const dy = otherMolecule.y - y;
+                  const distance = Math.sqrt(dx * dx + dy * dy);
+
+                  if (distance < molecule.radius + otherMolecule.radius) {
+                    const nx = dx / distance;
+                    const ny = dy / distance;
+
+                    vx -= nx * 0.2 * speedFactor;
+                    vy -= ny * 0.2 * speedFactor;
+
+                    const overlap = molecule.radius + otherMolecule.radius - distance;
+                    x -= nx * overlap * 0.5;
+                    y -= ny * overlap * 0.5;
+
+                    if (molecule.type === "polar") {
+                      const rotationReduction = molecules.length > 50 ? 0.2 : 1.0; // Greatly reduce rotation when crowded
+                      molecule.rotationVelocity +=
+                        (Math.random() * 0.2 - 0.1) * speedFactor * rotationReduction;
+                    }
+                  }
+                });
+
+                const postCollisionSpeed = Math.sqrt(vx * vx + vy * vy);
+                vx = (vx / postCollisionSpeed) * speed;
+                vy = (vy / postCollisionSpeed) * speed;
+
+                return { ...molecule, x, y, vx, vy, speedMultiplier };
+              });
+            });
+          };
+
+          // Calculate potential energy
+          const calculatePotentialEnergy = () => {
+            if (molecules.length === 0) {
+              setPotentialEnergy(0);
+              return;
+            }
+
+            if (energyRising) {
+              setEnergyRiseProgress((prev) => {
+                const newProgress = Math.min(1.0, prev + 0.05);
+                if (newProgress >= 1.0) {
+                  setEnergyRising(false);
+                }
+                return newProgress;
+              });
+
+              const easedProgress = Math.pow(energyRiseProgress, 2);
+              const startEnergy = STABLE_ENERGY;
+              const animatedEnergy = startEnergy + (100 - startEnergy) * easedProgress;
+              setPotentialEnergy(animatedEnergy);
+            } else if (shakeRecoveryTime > 0) {
+              const recoveryProgress = 1 - shakeRecoveryTime / 360;
+              const easeInQuad = recoveryProgress * recoveryProgress;
+              const currentEnergy = 100 - (100 - STABLE_ENERGY) * easeInQuad;
+
+              let positionVariation = 0;
+              molecules.forEach((molecule) => {
+                if (molecule.preferredRegion === "water") {
+                  positionVariation += Math.max(0, molecule.y - WATER_HEIGHT) * 0.05;
+                } else if (molecule.preferredRegion === "oil") {
+                  positionVariation += Math.max(0, WATER_HEIGHT - molecule.y) * 0.05;
+                } else if (molecule.preferredRegion === "interface") {
+                  positionVariation += Math.abs(molecule.y - WATER_HEIGHT) * 0.03;
+                }
+              });
+
+              const scaledVariation = Math.min(
+                5,
+                positionVariation / Math.max(1, molecules.length)
+              );
+              setPotentialEnergy(
+                Math.min(100, Math.max(STABLE_ENERGY, currentEnergy + scaledVariation))
+              );
+            } else if (crowdedSettlingTime > 0) {
+              // Extended settling period for many molecules - slower decay
+              const totalSettlingTime = isSecondBulkAdd
+                ? 1200 + (molecules.length - 50) * 8 // Much longer for second addition
+                : 600 + (molecules.length - 50) * 4; // Normal extended for first addition
+
+              const recoveryProgress = 1 - crowdedSettlingTime / totalSettlingTime;
+              const slowEase = isSecondBulkAdd
+                ? Math.pow(recoveryProgress, 0.5) // Even slower decay for second addition
+                : Math.pow(recoveryProgress, 0.7); // Slower than normal recovery
+
+              const startingEnergy = isSecondBulkAdd ? 90 : 80; // Higher starting energy for second addition
+              const currentEnergy =
+                startingEnergy - (startingEnergy - STABLE_ENERGY) * slowEase;
+
+              // Add more variation based on molecule interactions
+              let positionVariation = 0;
+              let moleculeInteractions = 0;
+
+              molecules.forEach((molecule) => {
+                if (molecule.preferredRegion === "water") {
+                  positionVariation +=
+                    Math.max(0, molecule.y - WATER_HEIGHT) *
+                    (isSecondBulkAdd ? 0.12 : 0.08);
+                } else if (molecule.preferredRegion === "oil") {
+                  positionVariation +=
+                    Math.max(0, WATER_HEIGHT - molecule.y) *
+                    (isSecondBulkAdd ? 0.12 : 0.08);
+                } else if (molecule.preferredRegion === "interface") {
+                  positionVariation +=
+                    Math.abs(molecule.y - WATER_HEIGHT) *
+                    (isSecondBulkAdd ? 0.1 : 0.06);
+                }
+
+                // Count nearby molecules for interaction energy
+                molecules.forEach((otherMolecule) => {
+                  if (molecule !== otherMolecule) {
+                    const dx = molecule.x - otherMolecule.x;
+                    const dy = molecule.y - otherMolecule.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 50) {
+                      // Close proximity
+                      moleculeInteractions += isSecondBulkAdd ? 0.5 : 0.3; // More interaction energy for second addition
+                    }
+                  }
+                });
+              });
+
+              const scaledVariation = Math.min(
+                isSecondBulkAdd ? 20 : 15,
+                positionVariation / Math.max(1, molecules.length)
+              );
+              const interactionEnergy = Math.min(
+                isSecondBulkAdd ? 15 : 10,
+                (moleculeInteractions / (molecules.length * molecules.length)) * 100
+              );
+              const oscillation =
+                Math.sin(Date.now() / (isSecondBulkAdd ? 250 : 200)) *
+                (isSecondBulkAdd ? 3 : 2); // Slower, larger oscillation for second addition
+
+              setPotentialEnergy(
+                Math.min(
+                  100,
+                  Math.max(
+                    STABLE_ENERGY,
+                    currentEnergy + scaledVariation + interactionEnergy + oscillation
+                  )
+                )
+              );
+            } else if (moleculeJustAdded) {
+              setMoleculeAddedTime((prevTime) => {
+                const newTime = Math.max(0, prevTime - 1);
+                if (newTime === 0) {
+                  setMoleculeJustAdded(false);
+                }
+                return newTime;
+              });
+
+              const boostFactor = moleculeAddedTime / MOLECULE_ADDED_RECOVERY_TIME;
+              const boostAmount = MOLECULE_ADDED_ENERGY_BOOST * boostFactor;
+              const oscillation = Math.sin(Date.now() / 100) * 2;
+              const baseEnergy = STABLE_ENERGY + oscillation;
+              setPotentialEnergy(Math.max(STABLE_ENERGY, baseEnergy + boostAmount));
+            } else {
+              let baseEnergy = STABLE_ENERGY;
+
+              if (mixingTime > 0) {
+                const mixingProgress = mixingTime / MIXING_DURATION;
+                baseEnergy += mixingProgress * 20;
+              }
+
+              const oscillation = Math.sin(Date.now() / 150) * 3;
+              let extraEnergy = 0;
+
+              molecules.forEach((molecule) => {
+                if (molecule.preferredRegion === "water") {
+                  extraEnergy += Math.max(0, molecule.y - WATER_HEIGHT) * 0.3;
+                } else if (molecule.preferredRegion === "oil") {
+                  extraEnergy += Math.max(0, WATER_HEIGHT - molecule.y) * 0.3;
+                } else if (molecule.preferredRegion === "interface") {
+                  extraEnergy += Math.abs(molecule.y - WATER_HEIGHT) * 0.2;
+                }
+              });
+
+              const scaledExtraEnergy = Math.min(
+                10,
+                (extraEnergy / Math.max(1, molecules.length)) * 1.5
+              );
+              setPotentialEnergy(
+                Math.max(STABLE_ENERGY, baseEnergy + oscillation + scaledExtraEnergy)
+              );
+            }
+          };
+
+          // Draw scene
+          const drawScene = (ctx) => {
+            if (!ctx) return;
+
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.imageSmoothingEnabled = false;
+
+            // Draw background regions for advanced tab only
+            if (activeTab === "advanced") {
+              // Oil region (top half) - faint yellow
+              ctx.fillStyle = "rgba(255, 235, 59, 0.1)";
+              ctx.fillRect(0, 0, CANVAS_WIDTH, WATER_HEIGHT);
+
+              // Water region (bottom half) - faint blue
+              ctx.fillStyle = "rgba(33, 150, 243, 0.1)";
+              ctx.fillRect(0, WATER_HEIGHT, CANVAS_WIDTH, OIL_HEIGHT);
+
+              // Interface line
+              ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
+              ctx.lineWidth = 1;
+              ctx.setLineDash([5, 5]);
+              ctx.beginPath();
+              ctx.moveTo(0, WATER_HEIGHT);
+              ctx.lineTo(CANVAS_WIDTH, WATER_HEIGHT);
+              ctx.stroke();
+              ctx.setLineDash([]);
+
+              // Labels
+              ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+              ctx.font = "bold 16px 'Poppins', sans-serif";
+              ctx.textAlign = "center";
+
+              // Oil label
+              ctx.fillText("OIL", CANVAS_WIDTH / 2, 30);
+
+              // Water label
+              ctx.fillText("WATER", CANVAS_WIDTH / 2, WATER_HEIGHT + 30);
+            }
+
+            // Show indicators
+            if (slowMotion) {
+              const slowMotionText = "SLOW MOTION";
+              ctx.font = "bold 14px 'Poppins', sans-serif";
+              const textWidth = ctx.measureText(slowMotionText).width;
+              const padding = 5;
+
+              ctx.fillStyle = "rgba(255, 220, 0, 0.3)";
+              ctx.fillRect(150, 25, textWidth + padding * 2, 20);
+              ctx.strokeStyle = "rgba(255, 180, 0, 0.7)";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(150, 25, textWidth + padding * 2, 20);
+              ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+              ctx.textAlign = "left";
+              ctx.textBaseline = "middle";
+              ctx.fillText(slowMotionText, 150 + padding, 35);
+              ctx.textBaseline = "alphabetic";
+            }
+
+            // Draw molecules
+            molecules.forEach((molecule) => {
+              if (showCharges && molecule.type === "amphipathic") {
+                // Skip normal drawing for amphipathic when showing charges
+              } else if (!showCharges || molecule.type !== "amphipathic") {
+                ctx.beginPath();
+                ctx.arc(molecule.x, molecule.y, molecule.radius, 0, Math.PI * 2);
+                ctx.fillStyle = molecule.color;
+                ctx.fill();
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+              }
+
+              // Show partial charges if enabled
+              if (showCharges) {
+                if (molecule.type === "polar") {
+                  ctx.save();
+                  ctx.translate(molecule.x, molecule.y);
+                  ctx.rotate(molecule.orientation || 0);
+
+                  ctx.beginPath();
+                  ctx.arc(0, 0, molecule.radius, Math.PI * 0.5, Math.PI * 1.5, false);
+                  ctx.lineTo(0, 0);
+                  ctx.closePath();
+                  ctx.fillStyle = "#FF4444";
+                  ctx.fill();
+
+                  ctx.beginPath();
+                  ctx.arc(0, 0, molecule.radius, -Math.PI * 0.5, Math.PI * 0.5, false);
+                  ctx.lineTo(0, 0);
+                  ctx.closePath();
+                  ctx.fillStyle = "#4444FF";
+                  ctx.fill();
+
+                  ctx.beginPath();
+                  ctx.moveTo(0, -molecule.radius);
+                  ctx.lineTo(0, molecule.radius);
+                  ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+                  ctx.lineWidth = 1;
+                  ctx.stroke();
+
+                  ctx.restore();
+                } else if (molecule.type === "amphipathic") {
+                  ctx.save();
+                  ctx.translate(molecule.x, molecule.y);
+                  ctx.rotate(molecule.orientation);
+
+                  ctx.beginPath();
+                  ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+                  ctx.fillStyle = "#FFFFFF";
+                  ctx.fill();
+                  ctx.strokeStyle = "black";
+                  ctx.lineWidth = 1;
+                  ctx.stroke();
+
+                  ctx.save();
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.lineTo(-molecule.radius, 0);
+                  ctx.lineTo(-molecule.radius, molecule.radius);
+                  ctx.lineTo(0, molecule.radius);
+                  ctx.closePath();
+                  ctx.clip();
+                  ctx.beginPath();
+                  ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+                  ctx.fillStyle = "#4444FF";
+                  ctx.fill();
+                  ctx.restore();
+
+                  ctx.save();
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.lineTo(molecule.radius, 0);
+                  ctx.lineTo(molecule.radius, molecule.radius);
+                  ctx.lineTo(0, molecule.radius);
+                  ctx.closePath();
+                  ctx.clip();
+                  ctx.beginPath();
+                  ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+                  ctx.fillStyle = "#FF4444";
+                  ctx.fill();
+                  ctx.restore();
+
+                  ctx.beginPath();
+                  ctx.arc(0, 0, molecule.radius, 0, Math.PI * 2);
+                  ctx.strokeStyle = "black";
+                  ctx.lineWidth = 1;
+                  ctx.stroke();
+
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.lineTo(0, molecule.radius);
+                  ctx.stroke();
+
+                  ctx.beginPath();
+                  ctx.moveTo(-molecule.radius, 0);
+                  ctx.lineTo(molecule.radius, 0);
+                  ctx.stroke();
+
+                  ctx.restore();
+                } else if (molecule.type === "nonpolar") {
+                  ctx.beginPath();
+                  ctx.arc(molecule.x, molecule.y, molecule.radius, 0, Math.PI * 2);
+                  ctx.fillStyle = "#FFFFFF";
+                  ctx.fill();
+                  ctx.strokeStyle = "black";
+                  ctx.lineWidth = 1;
+                  ctx.stroke();
+                }
+              }
+            });
+
+            if (shakeRecoveryTime > 0) {
+              const secondsLeft = (shakeRecoveryTime / 60).toFixed(1);
+              ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+              ctx.font = "12px 'Poppins', sans-serif";
+              ctx.textAlign = "right";
+              ctx.fillText(`Settling (${secondsLeft}s)`, CANVAS_WIDTH - 35, 24);
+            } else if (crowdedSettlingTime > 0) {
+              const secondsLeft = (crowdedSettlingTime / 60).toFixed(1);
+              ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+              ctx.font = "12px 'Poppins', sans-serif";
+              ctx.textAlign = "right";
+              const message = isSecondBulkAdd
+                ? `Equilibrating (${secondsLeft}s)`
+                : `Stabilizing (${secondsLeft}s)`;
+              ctx.fillText(message, CANVAS_WIDTH - 35, 24);
+            }
+
+            // Draw energy display
+            if (molecules.length > 0) {
+              ctx.fillStyle = "white";
+              ctx.fillRect(CANVAS_WIDTH - 150, 10, 140, 70);
+              ctx.strokeStyle = "black";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(CANVAS_WIDTH - 150, 10, 140, 70);
+
+              ctx.fillStyle = "black";
+              ctx.font = "bold 14px 'Poppins', sans-serif";
+              ctx.textAlign = "center";
+              ctx.fillText("Potential Energy", CANVAS_WIDTH - 80, 30);
+
+              ctx.fillStyle = "#e0e0e0";
+              ctx.strokeStyle = "#999999";
+              ctx.lineWidth = 1;
+              ctx.fillRect(CANVAS_WIDTH - 130, 40, 100, 20);
+              ctx.strokeRect(CANVAS_WIDTH - 130, 40, 100, 20);
+
+              const energyGradient = ctx.createLinearGradient(
+                CANVAS_WIDTH - 130,
+                40,
+                CANVAS_WIDTH - 130 + 100,
+                40
+              );
+              energyGradient.addColorStop(0, "limegreen");
+              energyGradient.addColorStop(0.5, "yellow");
+              energyGradient.addColorStop(1, "red");
+
+              ctx.fillStyle = energyGradient;
+              ctx.fillRect(CANVAS_WIDTH - 130, 40, potentialEnergy, 20);
+
+              if (potentialEnergy > 70) {
+                const pulseIntensity = 0.2 + 0.1 * Math.sin(Date.now() / 150);
+                ctx.globalAlpha = pulseIntensity;
+                ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+                ctx.fillRect(CANVAS_WIDTH - 130, 40, potentialEnergy, 20);
+                ctx.globalAlpha = 1.0;
+              }
+
+              ctx.fillStyle = "black";
+              ctx.font = "12px 'Poppins', sans-serif";
+              ctx.textAlign = "left";
+              ctx.fillText("Low", CANVAS_WIDTH - 130, 70);
+              ctx.textAlign = "right";
+              ctx.fillText("High", CANVAS_WIDTH - 30, 70);
+            }
+          };
+
+          const toggleSlowMotion = () => {
+            setSlowMotion(!slowMotion);
+          };
+
+          // Get available molecule options based on active tab
+          const getMoleculeOptions = () => {
+            if (activeTab === "simple") {
+              return [
+                { value: "molecule1", label: "Water (Blue)" },
+                { value: "molecule3", label: "Oil (Orange)" },
+                { value: "random", label: "Random (Water or Oil)" },
+              ];
+            } else {
+              return [
+                { value: "molecule1", label: "Water (Blue)" },
+                { value: "molecule2", label: "Polar Red" },
+                { value: "molecule3", label: "Oil (Orange)" },
+                { value: "molecule4", label: "Nonpolar Green" },
+                { value: "molecule5", label: "Amphipathic Purple" },
+                { value: "molecule6", label: "Amphipathic Pink" },
+                { value: "random", label: "Random Molecule" },
+              ];
+            }
+          };
+
+          return React.createElement(
+            "div",
+            {
+              style: {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                padding: "24px",
+                backgroundColor: "#ffffff",
+                borderRadius: "12px",
+                fontFamily: "'Montserrat', sans-serif",
+                minHeight: "100vh",
+              },
+            },
+            // Tab Navigation
+            React.createElement(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  marginBottom: "32px",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "12px",
+                  padding: "8px",
+                  boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+                  border: "2px solid #e0e0e0",
+                },
+              },
+              React.createElement(
+                "button",
+                {
+                  onClick: () => setActiveTab("simple"),
+                  style: {
+                    padding: "16px 32px",
+                    borderRadius: "8px",
+                    fontWeight: "700",
+                    fontSize: "18px",
+                    transition: "all 0.3s ease",
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: activeTab === "simple" ? "#000000" : "transparent",
+                    color: activeTab === "simple" ? "white" : "#6b7280",
+                    boxShadow:
+                      activeTab === "simple" ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "none",
+                    transform: activeTab === "simple" ? "translateY(-2px)" : "none",
+                    marginRight: "4px",
+                  },
+                },
+                "Simple: Oil & Water"
+              ),
+              React.createElement(
+                "button",
+                {
+                  onClick: () => setActiveTab("advanced"),
+                  style: {
+                    padding: "16px 32px",
+                    borderRadius: "8px",
+                    fontWeight: "700",
+                    fontSize: "18px",
+                    transition: "all 0.3s ease",
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor:
+                      activeTab === "advanced" ? "#000000" : "transparent",
+                    color: activeTab === "advanced" ? "white" : "#6b7280",
+                    boxShadow:
+                      activeTab === "advanced"
+                        ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+                        : "none",
+                    transform: activeTab === "advanced" ? "translateY(-2px)" : "none",
+                    marginLeft: "4px",
+                  },
+                },
+                "Advanced: More Molecules"
+              )
+            ),
+            // Add buttons
+            React.createElement(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: "24px",
+                  marginBottom: "16px",
+                  gap: "16px",
+                },
+              },
+              activeTab === "simple"
+                ? [
+                    React.createElement(
+                      "button",
+                      {
+                        key: "bulk",
+                        onClick: addBulkMolecules,
+                        style: {
+                          padding: "12px 20px",
+                          backgroundColor: "#2360A1",
+                          color: "white",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                          border: "none",
+                          cursor: "pointer",
+                          width: "220px",
+                        },
+                      },
+                      "Add a bunch of oil and water"
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        key: "random",
+                        onClick: addRandomMolecule,
+                        style: {
+                          padding: "12px 20px",
+                          backgroundColor: "#F2A128",
+                          color: "white",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                          border: "none",
+                          cursor: "pointer",
+                          width: "180px",
+                        },
+                      },
+                      "Add random molecule"
+                    ),
+                  ]
+                : [
+                    React.createElement(
+                      "button",
+                      {
+                        key: "random",
+                        onClick: addRandomMolecule,
+                        style: {
+                          padding: "12px 20px",
+                          backgroundColor: "#2360A1",
+                          color: "white",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                          border: "none",
+                          cursor: "pointer",
+                          width: "180px",
+                        },
+                      },
+                      "Add Random Molecule"
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        key: "five",
+                        onClick: add5RandomMolecules,
+                        style: {
+                          padding: "12px 20px",
+                          backgroundColor: "#97AFAE",
+                          color: "white",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                          border: "none",
+                          cursor: "pointer",
+                          width: "200px",
+                        },
+                      },
+                      "Add 5 Random Molecules"
+                    ),
+                  ]
+            ),
+            // Canvas
+            React.createElement(
+              "div",
+              { style: { position: "relative" } },
+              React.createElement("canvas", {
+                ref: canvasRef,
+                width: CANVAS_WIDTH,
+                height: CANVAS_HEIGHT,
+                style: {
+                  border: "2px solid #d1d5db",
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                },
+              })
+            ),
+            // Control buttons
+            React.createElement(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  flexWrap: "wrap",
+                  marginTop: "24px",
+                  justifyContent: "center",
+                  gap: "16px",
+                },
+              },
+              React.createElement(
+                "button",
+                {
+                  onClick: () => setRunning(!running),
+                  style: {
+                    padding: "12px 20px",
+                    backgroundColor: "#2360A1",
+                    color: "white",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                    border: "none",
+                    margin: "0 12px",
+                    cursor: "pointer",
+                  },
+                },
+                running ? "Pause" : "Start"
+              ),
+              React.createElement(
+                "button",
+                {
+                  onClick: resetSimulation,
+                  style: {
+                    padding: "12px 20px",
+                    backgroundColor: "#97AFAE",
+                    color: "white",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                    border: "none",
+                    margin: "0 12px",
+                    cursor: "pointer",
+                  },
+                },
+                "Reset"
+              ),
+              React.createElement(
+                "button",
+                {
+                  onClick: shakeMolecules,
+                  style: {
+                    padding: "12px 20px",
+                    backgroundColor: "#F2A128",
+                    color: "white",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                    border: "none",
+                    margin: "0 12px",
+                    cursor: "pointer",
+                  },
+                },
+                "Shake"
+              ),
+              React.createElement(
+                "button",
+                {
+                  onClick: toggleSlowMotion,
+                  style: {
+                    padding: "12px 20px",
+                    backgroundColor: slowMotion ? "#2360A1" : "#e2e8f0",
+                    color: slowMotion ? "white" : "#1e293b",
+                    borderRadius: "8px",
+                    fontSize: "16px",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                    border: "none",
+                    margin: "0 12px",
+                    cursor: "pointer",
+                  },
+                },
+                slowMotion ? "Normal Speed" : "Watch in Slow Motion"
+              )
+            ),
+            // Controls panel
+            React.createElement(
+              "div",
+              {
+                style: {
+                  marginTop: "32px",
+                  padding: "24px",
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  width: "100%",
+                  maxWidth: "600px",
+                },
+              },
+              // Molecule selection
+              React.createElement(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "16px",
+                    gap: "20px",
+                  },
+                },
+                React.createElement(
+                  "div",
+                  { style: { display: "flex", flexDirection: "column" } },
+                  React.createElement(
+                    "label",
+                    {
+                      style: {
+                        display: "block",
+                        fontSize: "14px",
+                        color: "#000000",
+                        marginBottom: "8px",
+                        fontWeight: "500",
+                      },
+                    },
+                    "Molecule Type:"
+                  ),
+                  React.createElement(
+                    "select",
+                    {
+                      value: selectedMoleculeType,
+                      onChange: (e) => setSelectedMoleculeType(e.target.value),
+                      style: {
+                        border: "1px solid #d1d5db",
+                        borderRadius: "4px",
+                        padding: "8px 12px",
+                        fontSize: "14px",
+                        width: "200px",
+                      },
+                    },
+                    getMoleculeOptions().map((option) =>
+                      React.createElement(
+                        "option",
+                        { key: option.value, value: option.value },
+                        option.label
+                      )
+                    )
+                  )
+                ),
+                React.createElement(
+                  "button",
+                  {
+                    onClick: addMolecule,
+                    style: {
+                      padding: "8px 20px",
+                      backgroundColor: "#F2A128",
+                      color: "white",
+                      borderRadius: "8px",
+                      fontSize: "16px",
+                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                      border: "none",
+                      cursor: "pointer",
+                      marginTop: "28px",
+                      height: "38px",
+                    },
+                  },
+                  "Add Specific Molecule"
+                )
+              ),
+              // Show Partial Charges
+              React.createElement(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginTop: "8px",
+                  },
+                },
+                React.createElement("input", {
+                  type: "checkbox",
+                  id: "showCharges",
+                  checked: showCharges,
+                  onChange: () => setShowCharges(!showCharges),
+                  style: { marginRight: "8px" },
+                }),
+                React.createElement(
+                  "label",
+                  {
+                    htmlFor: "showCharges",
+                    style: {
+                      fontSize: "14px",
+                      color: "#000000",
+                      fontWeight: "500",
+                    },
+                  },
+                  "Show Partial Charges"
+                )
+              )
+            )
           );
-        }
-      });
-
-      function updateBondTypeVisibility() {
-        const checkbox = document.getElementById("show-bond-type");
-        const bondType = document.getElementById("bond-type");
-
-        if (checkbox.checked) {
-          bondType.classList.remove("hidden");
-        } else {
-          bondType.classList.add("hidden");
-        }
-      }
-
-      function updateBondVisualization(
-        en1,
-        en2,
-        atom1Symbol = "A",
-        atom2Symbol = "B"
-      ) {
-        const diff = Math.abs(en2 - en1);
-
-        // Update atom symbols
-        document.getElementById("atom1").textContent = atom1Symbol;
-        document.getElementById("atom2").textContent = atom2Symbol;
-
-        // Update electronegativity values
-        document.getElementById("en1").textContent = en1.toFixed(2);
-        document.getElementById("en2").textContent = en2.toFixed(2);
-        document.getElementById("en-diff").textContent = diff.toFixed(2);
-
-        // Update labels with actual atom names
-        const atomNames = {
-          H: "Hydrogen",
-          Li: "Lithium",
-          C: "Carbon",
-          N: "Nitrogen",
-          O: "Oxygen",
-          F: "Fluorine",
-          Na: "Sodium",
-          Mg: "Magnesium",
-          Al: "Aluminum",
-          Si: "Silicon",
-          P: "Phosphorus",
-          S: "Sulfur",
-          Cl: "Chlorine",
-          K: "Potassium",
-          Ca: "Calcium",
-          Br: "Bromine",
-          I: "Iodine",
         };
 
-        const atom1Name = atomNames[atom1Symbol] || atom1Symbol;
-        const atom2Name = atomNames[atom2Symbol] || atom2Symbol;
-
-        document.querySelector(
-          ".info-panel .info-item:first-child .info-label"
-        ).innerHTML = `${atom1Name}<br>Electronegativity`;
-        document.querySelector(
-          ".info-panel .info-item:last-child .info-label"
-        ).innerHTML = `${atom2Name}<br>Electronegativity`;
-
-        // Color the difference value based on magnitude
-        const diffElement = document.getElementById("en-diff");
-        const maxDiff = 3.2; // Approximate max difference (K vs F)
-        const intensity = Math.min(diff / maxDiff, 1); // Scale 0-1
-
-        if (diff < 0.001) {
-          // Zero difference - neutral gray
-          diffElement.style.background = "#95a5a6";
-          diffElement.style.color = "white";
-        } else {
-          // Scale from light gray to bright red
-          const r = Math.round(149 + (255 - 149) * intensity); // 149 to 255 (red)
-          const g = Math.round(165 + (0 - 165) * intensity); // 165 to 0 (green)
-          const b = Math.round(166 + (0 - 166) * intensity); // 166 to 0 (blue)
-
-          diffElement.style.background = `rgb(${r}, ${g}, ${b})`;
-          diffElement.style.color = intensity > 0.5 ? "white" : "#2c3e50";
-        }
-
-        // Determine which atom is more electronegative
-        const moreElectronegative = en1 > en2 ? "left" : "right";
-
-        // Get cloud elements
-        const cloud = document.getElementById("electron-cloud");
-        const ionicCloudLeft = document.getElementById("ionic-cloud-left");
-        const ionicCloudRight = document.getElementById("ionic-cloud-right");
-        const chargeLeft = document.getElementById("charge-left");
-        const chargeRight = document.getElementById("charge-right");
-        const bondType = document.getElementById("bond-type");
-
-        if (diff < 0.001) {
-          // Exactly equal - crossed zero
-          cloud.style.display = "block";
-          ionicCloudLeft.style.display = "none";
-          ionicCloudRight.style.display = "none";
-          cloud.style.background = "linear-gradient(90deg, #ddd 0%, #ddd 100%)";
-          chargeLeft.textContent = "⌀";
-          chargeRight.textContent = "⌀";
-          chargeLeft.style.fontSize = "16px";
-          chargeRight.style.fontSize = "16px";
-          chargeLeft.style.color = "#7f8c8d";
-          chargeRight.style.color = "#7f8c8d";
-          bondType.textContent = "Nonpolar Covalent";
-          bondType.className = "bond-type nonpolar";
-        } else if (diff < 0.4) {
-          // Nonpolar - tiny gray δ symbols
-          cloud.style.display = "block";
-          ionicCloudLeft.style.display = "none";
-          ionicCloudRight.style.display = "none";
-          cloud.style.background = "linear-gradient(90deg, #ddd 0%, #ddd 100%)";
-
-          if (moreElectronegative === "left") {
-            chargeLeft.textContent = "δ−";
-            chargeRight.textContent = "δ+";
-          } else {
-            chargeLeft.textContent = "δ+";
-            chargeRight.textContent = "δ−";
-          }
-
-          chargeLeft.style.fontSize = "8px";
-          chargeRight.style.fontSize = "8px";
-          chargeLeft.style.color = "#bdc3c7";
-          chargeRight.style.color = "#bdc3c7";
-          bondType.textContent = "Nonpolar Covalent";
-          bondType.className = "bond-type nonpolar";
-        } else if (diff >= 0.4 && diff < 1.7) {
-          // Polar covalent with distinct strength levels
-          cloud.style.display = "block";
-          ionicCloudLeft.style.display = "none";
-          ionicCloudRight.style.display = "none";
-
-          let opacity, fontSize;
-
-          if (diff < 0.8) {
-            // Weakly polar - light, subtle colors
-            opacity = 0.25 + (diff - 0.4) * 0.25; // 0.25 to 0.35
-            fontSize = 14 + (diff - 0.4) * 12.5; // 14px to 19px
-          } else if (diff < 1.2) {
-            // Moderately polar - medium colors
-            opacity = 0.4 + (diff - 0.8) * 0.25; // 0.4 to 0.5
-            fontSize = 20 + (diff - 0.8) * 12.5; // 20px to 25px
-          } else if (diff < 1.6) {
-            // Strongly polar - strong colors
-            opacity = 0.6 + (diff - 1.2) * 0.25; // 0.6 to 0.7
-            fontSize = 26 + (diff - 1.2) * 10; // 26px to 30px
-          } else {
-            // Very strongly polar - very strong colors, approaching ionic
-            opacity = 0.75 + (diff - 1.6) * 0.125; // 0.75 to 0.8
-            fontSize = 32 + (diff - 1.6) * 15; // 32px to 35px
-          }
-
-          if (moreElectronegative === "left") {
-            cloud.style.background = `linear-gradient(90deg, rgba(255,0,0,${opacity}) 0%, rgba(0,100,255,${opacity}) 100%)`;
-            chargeLeft.textContent = "δ−";
-            chargeRight.textContent = "δ+";
-            chargeLeft.style.color = "#ff0000";
-            chargeRight.style.color = "#0064ff";
-          } else {
-            cloud.style.background = `linear-gradient(90deg, rgba(0,100,255,${opacity}) 0%, rgba(255,0,0,${opacity}) 100%)`;
-            chargeLeft.textContent = "δ+";
-            chargeRight.textContent = "δ−";
-            chargeLeft.style.color = "#0064ff";
-            chargeRight.style.color = "#ff0000";
-          }
-
-          chargeLeft.style.fontSize = fontSize + "px";
-          chargeRight.style.fontSize = fontSize + "px";
-          bondType.textContent = "Polar Covalent";
-          bondType.className = "bond-type polar";
-        } else {
-          // Ionic - show separate clouds instead of single cloud
-          cloud.style.display = "none";
-          ionicCloudLeft.style.display = "block";
-          ionicCloudRight.style.display = "block";
-
-          if (moreElectronegative === "left") {
-            // Left atom gets extra electrons (negative), right loses electrons (positive)
-            ionicCloudLeft.style.background =
-              "radial-gradient(circle, rgba(255,0,0,0.9) 0%, rgba(255,100,100,0.6) 60%, rgba(255,150,150,0.3) 100%)";
-            ionicCloudRight.style.background =
-              "radial-gradient(circle, rgba(0,100,255,0.7) 0%, rgba(100,150,255,0.4) 60%, rgba(150,180,255,0.2) 100%)";
-            ionicCloudLeft.style.width = "140px";
-            ionicCloudLeft.style.height = "140px";
-            ionicCloudRight.style.width = "100px";
-            ionicCloudRight.style.height = "100px";
-            ionicCloudLeft.style.transform = "translateX(-195px)";
-            ionicCloudRight.style.transform = "translateX(75px)";
-            chargeLeft.textContent = "−";
-            chargeRight.textContent = "+";
-            chargeLeft.style.color = "#ff0000";
-            chargeRight.style.color = "#0064ff";
-          } else {
-            // Right atom gets extra electrons (negative), left loses electrons (positive)
-            ionicCloudLeft.style.background =
-              "radial-gradient(circle, rgba(0,100,255,0.7) 0%, rgba(100,150,255,0.4) 60%, rgba(150,180,255,0.2) 100%)";
-            ionicCloudRight.style.background =
-              "radial-gradient(circle, rgba(255,0,0,0.9) 0%, rgba(255,100,100,0.6) 60%, rgba(255,150,150,0.3) 100%)";
-            ionicCloudLeft.style.width = "100px";
-            ionicCloudLeft.style.height = "100px";
-            ionicCloudRight.style.width = "140px";
-            ionicCloudRight.style.height = "140px";
-            ionicCloudLeft.style.transform = "translateX(-175px)";
-            ionicCloudRight.style.transform = "translateX(55px)";
-            chargeLeft.textContent = "+";
-            chargeRight.textContent = "−";
-            chargeLeft.style.color = "#0064ff";
-            chargeRight.style.color = "#ff0000";
-          }
-
-          chargeLeft.style.fontSize = "42px";
-          chargeRight.style.fontSize = "42px";
-          bondType.textContent = "Ionic";
-          bondType.className = "bond-type ionic";
-        }
-      }
-
-      let selectedAtoms = {
-        "intro-atom1": "H",
-        "intro-atom2": "F",
-        "full-atom1": "H",
-        "full-atom2": "F",
-      };
-
-      let currentView = "cloud";
-      let electronAnimation = null;
-      let electrons = [];
-
-      // Initialize electron positions
-      function initializeElectrons() {
-        electrons = [
-          { id: "electron-1", x: 150, y: 80, vx: 7.5, vy: 4.5 },
-          { id: "electron-2", x: 200, y: 100, vx: -4.5, vy: 6.0 },
-        ];
-      }
-
-      function switchView(view) {
-        currentView = view;
-
-        // Update toggle buttons
-        document
-          .querySelectorAll(".toggle-btn")
-          .forEach((btn) => btn.classList.remove("active"));
-        event.target.classList.add("active");
-
-        const cloudView = document.getElementById("electron-cloud");
-        const ionicCloudLeft = document.getElementById("ionic-cloud-left");
-        const ionicCloudRight = document.getElementById("ionic-cloud-right");
-        const dotsView = document.getElementById("electron-dots-view");
-
-        if (view === "cloud") {
-          dotsView.style.display = "none";
-          if (electronAnimation) {
-            cancelAnimationFrame(electronAnimation);
-            electronAnimation = null;
-          }
-          // Update visualization to show appropriate clouds
-          if (currentMode === "intro") {
-            updateBondFromIntro();
-          } else if (currentMode === "atoms") {
-            updateBondFromFull();
-          } else {
-            updateBondFromSliders();
-          }
-        } else {
-          cloudView.style.display = "none";
-          ionicCloudLeft.style.display = "none";
-          ionicCloudRight.style.display = "none";
-          dotsView.style.display = "block";
-          initializeElectrons(); // Reset electron positions
-          animateElectrons();
-        }
-      }
-
-      function animateElectrons() {
-        if (currentView !== "dots") return;
-
-        const en1 = electronegativity[selectedAtoms["intro-atom1"]];
-        const en2 = electronegativity[selectedAtoms["intro-atom2"]];
-        const diff = Math.abs(en2 - en1);
-
-        // Atom positions
-        const atom1X = 125; // Left atom center
-        const atom2X = 325; // Right atom center
-        const atomY = 100; // Both atoms Y center
-
-        // Determine which atom is more electronegative
-        const moreElectronegativeLeft = en1 > en2;
-        const lessElectronegativeLeft = en1 < en2;
-
-        electrons.forEach((electron) => {
-          const el = document.getElementById(electron.id);
-
-          // Update position with current velocity
-          electron.x += electron.vx;
-          electron.y += electron.vy;
-
-          // Calculate distances to both atoms
-          const distToAtom1 = Math.sqrt(
-            (electron.x - atom1X) ** 2 + (electron.y - atomY) ** 2
-          );
-          const distToAtom2 = Math.sqrt(
-            (electron.x - atom2X) ** 2 + (electron.y - atomY) ** 2
-          );
-
-          // Create attraction forces to both atoms
-          const baseAttraction = 0.025; // Increased 3x from 0.01
-          const electronegativityBonus = diff * 0.06; // Increased stronger bias (4x from 0.015)
-
-          // Both atoms attract electrons, but electronegative one attracts more
-          let atom1Attraction = baseAttraction;
-          let atom2Attraction = baseAttraction;
-
-          if (moreElectronegativeLeft) {
-            atom1Attraction += electronegativityBonus;
-          } else if (lessElectronegativeLeft) {
-            atom2Attraction += electronegativityBonus;
-          }
-
-          // Apply attraction forces toward both atoms
-          if (distToAtom1 > 15) {
-            // Reduced threshold so they get closer
-            const atom1ForceX =
-              ((atom1X - electron.x) / distToAtom1) * atom1Attraction;
-            const atom1ForceY =
-              ((atomY - electron.y) / distToAtom1) * atom1Attraction;
-            electron.vx += atom1ForceX;
-            electron.vy += atom1ForceY;
-          }
-
-          if (distToAtom2 > 15) {
-            // Reduced threshold so they get closer
-            const atom2ForceX =
-              ((atom2X - electron.x) / distToAtom2) * atom2Attraction;
-            const atom2ForceY =
-              ((atomY - electron.y) / distToAtom2) * atom2Attraction;
-            electron.vx += atom2ForceX;
-            electron.vy += atom2ForceY;
-          }
-
-          // Add some randomness for natural movement (increased for more dynamic motion)
-          electron.vx += (Math.random() - 0.5) * 1.2; // Increased 3x from 0.4
-          electron.vy += (Math.random() - 0.5) * 1.2;
-
-          // Boundary collision detection (elliptical bounds)
-          const centerX = 225;
-          const centerY = 100;
-          const radiusX = 200;
-          const radiusY = 85;
-
-          const normalizedX = (electron.x - centerX) / radiusX;
-          const normalizedY = (electron.y - centerY) / radiusY;
-          const distanceFromCenter = Math.sqrt(
-            normalizedX * normalizedX + normalizedY * normalizedY
-          );
-
-          if (distanceFromCenter > 0.9) {
-            // Bounce off boundary with more force for faster electrons
-            electron.vx *= -0.9;
-            electron.vy *= -0.9;
-
-            // Move back inside
-            electron.x =
-              centerX + (normalizedX / distanceFromCenter) * radiusX * 0.85;
-            electron.y =
-              centerY + (normalizedY / distanceFromCenter) * radiusY * 0.85;
-          }
-
-          // Speed limiting - keep reasonable movement
-          const speed = Math.sqrt(
-            electron.vx * electron.vx + electron.vy * electron.vy
-          );
-          if (speed > 18.0) {
-            // Increased 3x from 6.0
-            electron.vx = (electron.vx / speed) * 18.0;
-            electron.vy = (electron.vy / speed) * 18.0;
-          }
-
-          // Apply slight friction
-          electron.vx *= 0.992; // Slightly more friction to control the faster movement
-          electron.vy *= 0.992;
-
-          // Update DOM element position
-          el.style.left = electron.x + "px";
-          el.style.top = electron.y + "px";
-        });
-
-        electronAnimation = requestAnimationFrame(animateElectrons);
-      }
-
-      function selectAtom(atomSlot, element, clickedBox) {
-        // Update selection
-        selectedAtoms[atomSlot] = element;
-
-        // Update visual selection for this atom slot
-        const parentSelector = clickedBox.closest(".atom-selector-visual");
-
-        // Remove 'selected' class from all boxes in this group
-        parentSelector.querySelectorAll(".element-box").forEach((box) => {
-          box.classList.remove("selected");
-        });
-
-        // Add 'selected' class to clicked box
-        clickedBox.classList.add("selected");
-
-        // Update the bond visualization based on which mode we're in
-        if (atomSlot.startsWith("intro-")) {
-          updateBondFromIntro();
-          // Reset electrons if in moving electrons view
-          if (currentView === "dots") {
-            initializeElectrons();
-          }
-        } else if (atomSlot.startsWith("full-")) {
-          updateBondFromFull();
-        }
-      }
-
-      function updateBondFromIntro() {
-        const atom1 = selectedAtoms["intro-atom1"];
-        const atom2 = selectedAtoms["intro-atom2"];
-        const en1 = electronegativity[atom1];
-        const en2 = electronegativity[atom2];
-        updateBondVisualization(en1, en2, atom1, atom2);
-      }
-
-      function updateBondFromFull() {
-        const atom1 = selectedAtoms["full-atom1"];
-        const atom2 = selectedAtoms["full-atom2"];
-        const en1 = electronegativity[atom1];
-        const en2 = electronegativity[atom2];
-        updateBondVisualization(en1, en2, atom1, atom2);
-      }
-
-      function updateBondFromSliders() {
-        const en1 = parseFloat(document.getElementById("en-slider-1").value);
-        const en2 = parseFloat(document.getElementById("en-slider-2").value);
-
-        // Update slider value displays
-        document.getElementById("en-value-1").textContent = en1.toFixed(2);
-        document.getElementById("en-value-2").textContent = en2.toFixed(2);
-
-        updateBondVisualization(en1, en2, "A", "B");
-      }
-
-      // Add event listeners
-      document
-        .getElementById("show-bond-type")
-        .addEventListener("change", updateBondTypeVisibility);
-      document
-        .getElementById("en-slider-1")
-        .addEventListener("input", updateBondFromSliders);
-      document
-        .getElementById("en-slider-2")
-        .addEventListener("input", updateBondFromSliders);
-
-      // Initialize
-      updateBondFromIntro();
-      updateBondTypeVisibility();
-      initializeElectrons();
+        ReactDOM.render(React.createElement(MolecularInteractionSandbox), document.getElementById('root'));
     </script>
-  </body>
+</body>
 </html>
